@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+
+import MySQLdb as mdb
+import sys
+
+from plate_server import settings
+from django.core.management import setup_environ
+setup_environ(settings)
+from django.contrib.auth.models import User
+import django.db.utils
+from api.models import *
+
+def restaurant_import(cur):
+    cur.execute('select * from rest_list;')
+    for i in cur.fetchall():
+        Restaruant(name=i[1], location=i[2]).save()
+
+def meal_import(cur):
+    cur.execute('select * from meal_list;')
+    for i in cur.fetchall():
+        Meal(name=i[1], price=i[2], restaurant=Restaruant.objects.get(id=i[3])).save()
+
+def manually_create_initial_users():
+    iphone_user = User(email='iPhone@plate.tw')
+    iphone_user.save()
+    android_user = User(username='android', email='android@plate.tw')
+    android_user.save()
+    Profile(user=User.objects.get(username='iphone'), phone_number='0912345678').save()
+    Profile(user=User.objects.get(username='android'), phone_number='0912345679').save()
+
+def order_import(con, cur):
+    cur.execute('select * from number_slip;')
+    for i in cur.fetchall():
+        if i[1] == u'iPhone@plate.tw':
+            user = User.objects.get(username='iphone')
+        elif i[1] == u'Android dev':
+            user = User.objects.get(username='android')
+        else:
+            assert(0)
+
+        order = Order(time=i[0], user=user, pos_slip_number=i[3], restaurant=Restaruant.objects.get(id=i[4]),
+              status=i[5])
+        order.save()
+
+        cur0 = con.cursor()
+        cur0.execute('select * from order_list where number_slip_index = ' + str(i[2]))
+        for j in cur0.fetchall():
+            OrderItem(meal=Meal.objects.get(id=j[2]), amount=j[3], order=order, note=j[5]).save()
+
+def meal_recommendation_import(cur):
+    cur.execute('select * from user_suggestions')
+    for i in cur.fetchall():
+        try:
+            meal = Meal.objects.get(name=i[1])
+        except Meal.DoesNotExist:
+            pass
+        else:
+            start = i[4].find('pic')
+            if start == -1:
+                assert(0)
+            else:
+                pic_url = i[4][start:]
+            meal.pic_url = pic_url
+            meal.save()
+            MealRecommendation(meal=meal, user=User.objects.get(id=1), description=i[6]).save()
+
+con = mdb.connect('localhost', 'root', charset='utf8')#, use_unicode=True)
+with con:
+    cur = con.cursor()
+    cur.execute('select version()')
+    ver = cur.fetchone()
+    assert(ver)
+
+    cur.execute('use test;')
+    if 0:
+        restaurant_import(cur)
+        meal_import(cur)
+        order_import(con, cur)
+        meal_recommendation_import(cur)
