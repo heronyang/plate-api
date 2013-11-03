@@ -1,5 +1,0 @@
-HTTP/1.0 200 OK
-Date: Sun, 03 Nov 2013 08:55:43 GMT
-Server: WSGIServer/0.1 Python/2.7.5
-Content-Type: application/json
-

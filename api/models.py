@@ -34,6 +34,7 @@ class Meal(models.Model):
         return self.name
 
     def order_create(self, user, amount, time=None, note=None):
+        # FIXME: meals could sell out
         if time is None:
             time = timezone.now()
         if note is None:
@@ -44,7 +45,8 @@ class Meal(models.Model):
         oi.save()
         return order
 
-    def order_add(self, user, amount, order, note=None):
+    def order_add(self, amount, order, note=None):
+        # FIXME: meals could sell out
         if note is None:
             note = ''
         oi = OrderItem(meal=self, amount=amount, order=order, note=note)
@@ -78,5 +80,6 @@ class MealRecommendation(models.Model):
     meal = models.ForeignKey(Meal)
     user = models.ForeignKey(get_user_model())
     description = models.TextField(blank=True) # extra info for the recommendation
+
     def __unicode__(self):
         return '%s %s' % (self.meal.name, self.user.email)
