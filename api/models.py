@@ -17,7 +17,7 @@ class Profile(models.Model):
     def __unicode__(self):
         return self.phone_number
 
-class Restaruant(models.Model):
+class Restaurant(models.Model):
     name = models.CharField(max_length=RESTAURANT_NAME_MAX)
     pic_url = models.URLField(blank=True)
     location = models.IntegerField(default=0) # Enum like
@@ -28,7 +28,7 @@ class Meal(models.Model):
     name = models.CharField(max_length=MEAL_NAME_MAX)
     pic_url = models.URLField(blank=True)
     price = models.IntegerField()
-    restaurant = models.ForeignKey(Restaruant)
+    restaurant = models.ForeignKey(Restaurant)
 
     def __unicode__(self):
         return self.name
@@ -55,7 +55,7 @@ class Meal(models.Model):
 class Order(models.Model):
     time = models.DateTimeField('time entered')
     user = models.ForeignKey(get_user_model())
-    restaurant = models.ForeignKey(Restaruant)
+    restaurant = models.ForeignKey(Restaurant)
     pos_slip_number = models.IntegerField(blank=True, null=True) # the number printed on the slip by the Point-Of-Sale system
     status = models.IntegerField(default=0)
 

@@ -47,7 +47,7 @@ class LoginTest(TestCase):
         self.assertEqual(res.status_code, 401)
 
 def _create_restaurant0():
-    r0 = Restaruant(name='R0', location=1)
+    r0 = Restaurant(name='R0', location=1)
     r0.save()
     return r0
 
@@ -148,7 +148,7 @@ class OldAPITest(TestCase):
                                              u'meal_name': u'M0',
                                              u'meal_id': 1}],
                              u'success': 1})
-    
+
     def test_old_status(self):
         self.client.logout()
         o0 = _create_order0()

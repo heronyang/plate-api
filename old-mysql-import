@@ -26,7 +26,7 @@ def manually_create_initial_users():
     android_user = User(username='android@plate.tw', email='android@plate.tw')
     android_user.save()
     Profile(user=iphone_user, phone_number='0912345678').save()
-    Profile(user=android_user), phone_number='0912345679').save()
+    Profile(user=android_user, phone_number='0912345679').save()
 
 def order_import(con, cur):
     cur.execute('select * from number_slip;')

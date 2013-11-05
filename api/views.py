@@ -143,7 +143,7 @@ def old_restaurants(request):
         return res
 
     out = {}
-    rs = Restaruant.objects.filter(location=location)
+    rs = Restaurant.objects.filter(location=location)
     if rs:
         out['success'] = 1
     else:
@@ -208,7 +208,7 @@ def old_status(request):
         restaurant = oi.meal.restaurant
         l.append(dict(time=i.time,
                       number_slip_index=i.id,
-                      number_slip=i.pos_slip_number, 
+                      number_slip=i.pos_slip_number,
                       rest_id=restaurant.id,
                       rest_name=restaurant.name,
                       status=i.status))

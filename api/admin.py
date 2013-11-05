@@ -31,7 +31,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
-admin.site.register(Restaruant)
+admin.site.register(Restaurant)
 admin.site.register(Meal)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(MealRecommendation)
