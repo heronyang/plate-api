@@ -14,6 +14,13 @@ class MyUserAdmin(UserAdmin):
     def phone_number(self, user):
         return user.profile.phone_number
 
+class MealAdmin(admin.ModelAdmin):
+    # FIXME: show pic_url somehow (thumbnail?)
+    list_display = ('restaurant', 'name', 'price')
+
+    search_fields = ['name', 'restaurant__name']
+    list_filter = ['restaurant__name']
+
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
@@ -47,6 +54,6 @@ class MealRecommendationsAdmin(admin.ModelAdmin):
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
 admin.site.register(Restaurant)
-admin.site.register(Meal)
+admin.site.register(Meal, MealAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(MealRecommendation, MealRecommendationsAdmin)
