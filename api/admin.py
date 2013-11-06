@@ -9,7 +9,7 @@ class ProfileInline(admin.StackedInline):
 
 class MyUserAdmin(UserAdmin):
     inlines = [ProfileInline]
-    list_display = ('email',  'phone_number', 'last_name', 'first_name')
+    list_display = ('email', 'phone_number', 'last_name', 'first_name')
 
     def phone_number(self, user):
         return user.profile.phone_number
@@ -29,9 +29,24 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = ['time']
     date_hierarchy = 'time'
 
+class MealRecommendationsAdmin(admin.ModelAdmin):
+    list_display = ('email', 'restaurant_name', 'meal_name')
+
+    def email(self, recommendation):
+        return recommendation.user.email
+
+    def restaurant_name(self, recommendation):
+        return recommendation.meal.restaurant.name
+
+    def meal_name(self, recommendation):
+        return recommendation.meal.name
+
+    search_fields = ['user__email', 'meal__name']
+    list_filter = ['user']
+
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
 admin.site.register(Restaurant)
 admin.site.register(Meal)
 admin.site.register(Order, OrderAdmin)
-admin.site.register(MealRecommendation)
+admin.site.register(MealRecommendation, MealRecommendationsAdmin)
