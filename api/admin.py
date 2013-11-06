@@ -8,11 +8,18 @@ class ProfileInline(admin.StackedInline):
     verbose_name_plural = 'profiles'
 
 class MyUserAdmin(UserAdmin):
+    # FIXME: show pic_url as avatar
     inlines = [ProfileInline]
     list_display = ('email', 'phone_number', 'last_name', 'first_name')
 
     def phone_number(self, user):
         return user.profile.phone_number
+
+class RestaurantAdmin(admin.ModelAdmin):
+    # FIXME: symbolic names for 'location'
+    list_display = ('name', 'location')
+    search_fields = ['name']
+    list_filter = ['location']
 
 class MealAdmin(admin.ModelAdmin):
     # FIXME: show pic_url somehow (thumbnail?)
@@ -33,7 +40,7 @@ class OrderAdmin(admin.ModelAdmin):
         return order.user.email
 
     search_fields = ['user__email', 'restaurant__name']
-    list_filter = ['time']
+    list_filter = ['restaurant']
     date_hierarchy = 'time'
 
 class MealRecommendationsAdmin(admin.ModelAdmin):
@@ -53,7 +60,7 @@ class MealRecommendationsAdmin(admin.ModelAdmin):
 
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
-admin.site.register(Restaurant)
+admin.site.register(Restaurant, RestaurantAdmin)
 admin.site.register(Meal, MealAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(MealRecommendation, MealRecommendationsAdmin)
