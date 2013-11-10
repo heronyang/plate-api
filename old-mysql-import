@@ -21,12 +21,22 @@ def meal_import(cur):
         Meal(name=i[1], price=i[2], restaurant=Restaruant.objects.get(id=i[3])).save()
 
 def manually_create_initial_users():
+#old API with testing users
     iphone_user = User(username='iphone@plate.tw', email='iphone@plate.tw')
     iphone_user.save()
     android_user = User(username='android@plate.tw', email='android@plate.tw')
     android_user.save()
     Profile(user=iphone_user, phone_number='0912345678').save()
     Profile(user=android_user, phone_number='0912345679').save()
+
+#new API using phone number as username
+#FIXME: not tested yet
+    user_1 = User(username='0911111111', password='1')
+    user_1.save()
+    user_2 = User(username='0922222222', password='2')
+    user_2.save()
+    Profile(user=user_1, phone_number=user_1.phone_number).save()
+    Profile(user=user_2, phone_number=user_2.phone_number).save()
 
 def order_import(con, cur):
     cur.execute('select * from number_slip;')

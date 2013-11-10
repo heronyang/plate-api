@@ -25,7 +25,7 @@ def register(request):
 @csrf_exempt
 @require_POST
 def login(request):
-    res = HttpResponse(CONTENT_TYPE_JSON)
+    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
     (email, password) = (request.POST['email'], request.POST['password'])
     user = authenticate(username=email, password=password)
     if user is not None:
