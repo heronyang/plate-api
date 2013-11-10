@@ -14,6 +14,7 @@ class Profile(models.Model):
     user = models.OneToOneField(get_user_model())
     phone_number = models.CharField(max_length=20)
     pic_url = models.URLField(blank=True)
+
     def __unicode__(self):
         return self.phone_number
 

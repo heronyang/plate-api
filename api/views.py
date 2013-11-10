@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 import django.views.generic.base
 from django.utils.decorators import method_decorator
+from django.contrib.auth.models import User
 
 from jsonate import jsonate
 
@@ -20,7 +21,36 @@ CONTENT_TYPE_TEXT = 'text/plain'
 
 @csrf_exempt
 def register(request):
-    assert(0)
+    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
+    phone_number = request.POST['phone_number']
+    password = request.POST['password']
+
+    if not phone_number or not password:
+        res.status_code = 401 #wrong input
+        return res
+
+    if User.objects.filter(username=phone_number).count():
+        res.status_code = 401 #user already exists
+        return res
+
+    if not check_valid_phone_number(phone_number):
+        res.status_code = 401 #wrong format
+        return res
+
+    #FIXME: send SMS to verify the user
+#add the user if not exist, set as invalid before being verified via SMS
+#password will be passed by the app-user, which may be device ID
+    new_user = User.objects.create_user(username=phone_number, password=password)
+    new_user.save()
+    Profile(user=new_user, phone_number=new_user.username).save()
+
+    res.content = password
+    res.status_code = 200
+    return res
+
+def check_valid_phone_number(phone_number):
+    #FIXME: uncompleted
+    return True
 
 @csrf_exempt
 @require_POST
