@@ -11,6 +11,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 import django.views.generic.base
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
+import re
 
 from jsonate import jsonate
 
@@ -41,16 +42,22 @@ def register(request):
 #add the user if not exist, set as invalid before being verified via SMS
 #password will be passed by the app-user, which may be device ID
     new_user = User.objects.create_user(username=phone_number, password=password)
+    new_user.is_active = False
     new_user.save()
     Profile(user=new_user, phone_number=new_user.username).save()
 
-    res.content = password
+    send_verification(phone_number)
     res.status_code = 200
     return res
 
 def check_valid_phone_number(phone_number):
-    #FIXME: uncompleted
-    return True
+# only support cell phone number so far, like 0912123123
+    if re.match( r'^09(\d{8})$', phone_number):
+        return True
+    return False
+
+def send_verification(phone_number):
+    return
 
 @csrf_exempt
 @require_POST
