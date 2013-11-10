@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from uuidfield import UUIDField
+
 
 RESTAURANT_NAME_MAX = 33
 MEAL_NAME_MAX = 85
@@ -84,3 +86,8 @@ class MealRecommendation(models.Model):
 
     def __unicode__(self):
         return '%s %s' % (self.meal.name, self.user.email)
+
+class UUIDTable(models.Model):
+    uuid = UUIDField(auto=True)
+    user = models.ForeignKey(get_user_model())
+    is_disabled = models.BooleanField(default=False)
