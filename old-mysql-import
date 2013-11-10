@@ -35,8 +35,8 @@ def manually_create_initial_users():
     user_1.save()
     user_2 = User(username='0922222222', password='2')
     user_2.save()
-    Profile(user=user_1, phone_number=user_1.phone_number).save()
-    Profile(user=user_2, phone_number=user_2.phone_number).save()
+    Profile(user=user_1, phone_number=user_1.username).save()
+    Profile(user=user_2, phone_number=user_2.username).save()
 
 def order_import(con, cur):
     cur.execute('select * from number_slip;')
