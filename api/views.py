@@ -12,6 +12,7 @@ import django.views.generic.base
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 import re
+import uuid
 
 from jsonate import jsonate
 
@@ -46,7 +47,9 @@ def register(request):
     new_user.save()
     Profile(user=new_user, phone_number=new_user.username).save()
 
-    send_verification(phone_number)
+    user_uuid = uuid.uuid4()
+    UUIDTable(uuid=user_uuid, user=new_user).save()
+    send_verification(phone_number, user_uuid)
     res.status_code = 200
     return res
 
@@ -56,7 +59,8 @@ def check_valid_phone_number(phone_number):
         return True
     return False
 
-def send_verification(phone_number):
+def send_verification(phone_number, user_uuid):
+    #FIXME: Send request to send SMS
     return
 
 @csrf_exempt
