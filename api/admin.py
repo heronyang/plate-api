@@ -10,7 +10,7 @@ class ProfileInline(admin.StackedInline):
 class MyUserAdmin(UserAdmin):
     # FIXME: show pic_url as avatar
     inlines = [ProfileInline]
-    list_display = ('email', 'phone_number', 'last_name', 'first_name')
+    list_display = ('username', 'phone_number', 'last_name', 'first_name', 'email')
 
     def phone_number(self, user):
         return user.profile.phone_number
