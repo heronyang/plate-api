@@ -32,6 +32,7 @@ class Meal(models.Model):
     pic_url = models.URLField(blank=True)
     price = models.IntegerField()
     restaurant = models.ForeignKey(Restaurant)
+    status = models.IntegerField(default=0) # if sold out, or other status
 
     def __unicode__(self):
         return self.name
@@ -56,6 +57,7 @@ class Meal(models.Model):
         oi.save()
 
 class Order(models.Model):
+    #FIXME:add ctime, mtime
     time = models.DateTimeField('time entered')
     user = models.ForeignKey(get_user_model())
     restaurant = models.ForeignKey(Restaurant)
@@ -87,7 +89,8 @@ class MealRecommendation(models.Model):
     def __unicode__(self):
         return '%s %s' % (self.meal.name, self.user.email)
 
-class UUIDTable(models.Model):
+class UserRegistration(models.Model):
     uuid = UUIDField(auto=True)
     user = models.ForeignKey(get_user_model())
-    is_disabled = models.BooleanField(default=False)
+    clicked = models.BooleanField(default=False)
+    ctime = models.DateTimeField('time entered')

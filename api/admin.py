@@ -58,9 +58,9 @@ class MealRecommendationsAdmin(admin.ModelAdmin):
     search_fields = ['user__email', 'meal__name']
     list_filter = ['user']
 
-class UUIDAdmin(admin.ModelAdmin):
+class UserRegistrationAdmin(admin.ModelAdmin):
     inlines = [ProfileInline]
-    list_display = ('user', 'uuid', 'is_disabled')
+    list_display = ('user', 'uuid', 'clicked')
 
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
@@ -68,4 +68,4 @@ admin.site.register(Restaurant, RestaurantAdmin)
 admin.site.register(Meal, MealAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(MealRecommendation, MealRecommendationsAdmin)
-admin.site.register(UUIDTable, UUIDAdmin)
+admin.site.register(UserRegistration, UserRegistrationAdmin)
