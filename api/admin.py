@@ -23,7 +23,7 @@ class RestaurantAdmin(admin.ModelAdmin):
 
 class MealAdmin(admin.ModelAdmin):
     # FIXME: show pic_url somehow (thumbnail?)
-    list_display = ('restaurant', 'name', 'price')
+    list_display = ('restaurant', 'name', 'price', 'status')
 
     search_fields = ['name', 'restaurant__name']
     list_filter = ['restaurant__name']
@@ -60,7 +60,7 @@ class MealRecommendationsAdmin(admin.ModelAdmin):
 
 class UserRegistrationAdmin(admin.ModelAdmin):
     inlines = [ProfileInline]
-    list_display = ('user', 'uuid', 'clicked')
+    list_display = ('user', 'code', 'ctime', 'clicked')
 
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)

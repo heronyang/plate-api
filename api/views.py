@@ -12,7 +12,6 @@ import django.views.generic.base
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 import re
-import uuid
 
 from jsonate import jsonate
 
@@ -28,40 +27,48 @@ def register(request):
     password = request.POST['password']
 
     if not phone_number or not password:
-        res.status_code = 401 #wrong input
+        res.status_code = 401   # wrong input
         return res
 
-    if User.objects.filter(username=phone_number).count():
-        res.status_code = 401 #user already exists
-        return res
+    new_profile = Profile().create(phone_number=phone_number,
+                                   password=password,
+                                   role="user")
+    new_profile.save()
 
-    if not check_valid_phone_number(phone_number):
-        res.status_code = 401 #wrong format
-        return res
+    if new_profile:
+        res.status_code = 200
+        res.content = password
+    else:
+        res.status_code = 401   # can't create user
 
-    #FIXME: send SMS to verify the user
-#add the user if not exist, set as invalid before being verified via SMS
-#password will be passed by the app-user, which may be device ID
-    new_user = User.objects.create_user(username=phone_number, password=password)
-    new_user.is_active = False
-    new_user.save()
-    Profile(user=new_user, phone_number=new_user.username).save()
-
-    user_uuid = uuid.uuid4()
-    UUIDTable(uuid=user_uuid, user=new_user).save()
-    send_verification(phone_number, user_uuid)
-    res.status_code = 200
     return res
 
-def check_valid_phone_number(phone_number):
-# only support cell phone number so far, like 0912123123
-    if re.match( r'^09(\d{8})$', phone_number):
-        return True
-    return False
+@csrf_exempt
+@require_GET
+def activate(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
 
-def send_verification(phone_number, user_uuid):
-    #FIXME: Send request to send SMS
-    return
+    #FIXME: check if the record is clicked
+    code = request.GET['code']
+    ur_list = UserRegistration.objects.filter(code=code)
+
+    if not ur_list or ur_list.count() < 1:
+        res.status_code = 401   # registration record not found
+        return res
+
+    user = ur_list[0].user
+    profile_list = Profile.objects.filter(user=user)
+
+    if not profile_list or profile_list.count() < 1:
+        res.status_code = 401   # profile not exist
+        return res
+
+    profile = profile_list[0]
+    profile.activate()          # activate the profile here
+
+    res.status_code = 200
+    res.content = "Success!"
+    return res
 
 @csrf_exempt
 @require_POST

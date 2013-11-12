@@ -11,6 +11,7 @@ urlpatterns = patterns('',
     url(r'^1/restaurants$', views.restaurants, name='restaurants'),
     url(r'^1/user-orders$', views.user_orders, name='user_orders'),
     url(r'^1/recommendations$', views.recommendations, name='recommendations'),
+    url(r'^1/activate$', views.activate, name='activate'),
 
     # Old API
     url(r'^suggestions.php$', views.old_suggestions, name='old_suggestions'),
