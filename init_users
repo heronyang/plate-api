@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+from plate_server import settings
+from django.core.management import setup_environ
+setup_environ(settings)
+import django.db.utils
+from django.contrib.auth.models import Group
+
+# get_or_create won't raise any error if it's alread exist
+vendor_group = Group.objects.get_or_create(name="vendor")
+user_group = Group.objects.get_or_create(name="user")
