@@ -21,18 +21,28 @@ CONTENT_TYPE_JSON = 'application/json'
 CONTENT_TYPE_TEXT = 'text/plain'
 
 @csrf_exempt
+@require_POST
 def register(request):
     res = HttpResponse(content_type=CONTENT_TYPE_JSON)
-    phone_number = request.POST['phone_number']
-    password = request.POST['password']
+    try:
+        phone_number = request.POST['phone_number']
+        password = request.POST['password']
+    except MultiValueDictKeyError:
+        res.status_code = 400
+        return res
 
     if not phone_number or not password:
-        res.status_code = 401   # wrong input
+        res.status_code = 400   # wrong input
         return res
 
     new_profile = Profile().create(phone_number=phone_number,
                                    password=password,
                                    role="user")
+
+    if not new_profile:
+        res.status_code = 400   # bad request
+        return res
+
     new_profile.save()
 
     if new_profile:
@@ -74,8 +84,8 @@ def activate(request):
 @require_POST
 def login(request):
     res = HttpResponse(content_type=CONTENT_TYPE_JSON)
-    (email, password) = (request.POST['email'], request.POST['password'])
-    user = authenticate(username=email, password=password)
+    (username, password) = (request.POST['username'], request.POST['password'])
+    user = authenticate(username=username, password=password)
     if user is not None:
         if user.is_active:
             django.contrib.auth.login(request, user)
@@ -238,13 +248,13 @@ def old_status(request):
     # List orders for a user in reverse chronologically
     res = HttpResponse(content_type=CONTENT_TYPE_JSON)
     try:
-        email = request.POST['username']
+        username = request.POST['username']
     except MultiValueDictKeyError:
         res.status_code = 400
         res.content = json.dumps({'error': 'missing username'})
         return res
 
-    orders = Order.objects.filter(user__email=email).order_by('-time')
+    orders = Order.objects.filter(user__username=username).order_by('-time')
     out = {}
     if orders:
         out['success'] = True

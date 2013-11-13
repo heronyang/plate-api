@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from uuidfield import UUIDField
 from django.contrib.auth.models import User, Group
-import datetime
 import uuid
 import re
 
@@ -50,7 +49,7 @@ class Profile(models.Model):
 
         # send registeration code
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
-        ur = UserRegistration(user=self.user, code=code, ctime=datetime.datetime.now())
+        ur = UserRegistration(user=self.user, code=code, ctime=timezone.now())
         ur.save()
         self.__send_verification(code)
 
@@ -128,7 +127,7 @@ class Order(models.Model):
     status = models.IntegerField(default=0)
 
     def __unicode__(self):
-        return '%s %s' % (self.user.email, self.restaurant.name)
+        return '%s %s' % (self.user.username, self.restaurant.name)
 
     def delete(self):
         # NOTE: consider marking an order as "canceled" instead
@@ -150,7 +149,7 @@ class MealRecommendation(models.Model):
     description = models.TextField(blank=True) # extra info for the recommendation
 
     def __unicode__(self):
-        return '%s %s' % (self.meal.name, self.user.email)
+        return '%s %s' % (self.meal.name, self.user.username)
 
 class UserRegistration(models.Model):
     code = UUIDField(auto=True)

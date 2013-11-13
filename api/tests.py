@@ -14,37 +14,62 @@ from django.utils import timezone
 from api.models import *
 
 class _User0(object):
-    email = 'u0@example.com'
+    username = '0900111222'
     password = 'u0pw'
 
     @classmethod
     def create(cls):
         um = get_user_model()
-        u0 = um.objects.create_user(cls.email, cls.email, cls.password)
+        u0 = um.objects.create_user(username=cls.username, password=cls.password)
         u0.save()
         return u0
 
-def _login_through_api(testcase, email, password):
-    return testcase.client.post('/1/login', {'email': email, 'password': password })
+def _login_through_api(testcase, username, password):
+    return testcase.client.post('/1/login', {'username': username, 'password': password })
 
 class LoginTest(TestCase):
     def test_create_user(self):
         cls = type(self)
         um = get_user_model()
         u0 = _User0.create()
-        self.assertEqual(um.objects.get(email=_User0.email).id, u0.id)
+        self.assertEqual(um.objects.get(username=_User0.username).id, u0.id)
 
     def test_login_success(self):
         cls = type(self)
         u0 = _User0.create()
-        res = _login_through_api(self, _User0.email, _User0.password)
+        res = _login_through_api(self, _User0.username, _User0.password)
         self.assertEqual(res.status_code, 200)
 
     def test_login_failure(self):
         cls = type(self)
         u0 = _User0.create()
-        res = _login_through_api(self, _User0.email, _User0.password + 'XXX')
+        res = _login_through_api(self, _User0.username, _User0.password + 'XXX')
         self.assertEqual(res.status_code, 401)
+
+def _create_group0():
+    vendor_group = Group.objects.get_or_create(name="vendor")
+    user_group = Group.objects.get_or_create(name="user")
+
+class RegisterTest(TestCase):
+    def test_bad_requests(self):
+        _create_group0()
+        res = self.client.post('/1/register', {'phone_number': ''})
+        self.assertEqual(res.status_code, 400)
+
+    def test_wrong_format0(self):
+        _create_group0()
+        res = self.client.post('/1/register', {'phone_number': '091112312', 'password': '1'})
+        self.assertEqual(res.status_code, 400)
+
+    def test_wrong_format1(self):
+        _create_group0()
+        res = self.client.post('/1/register', {'phone_number': '0911123123', 'password': ''})
+        self.assertEqual(res.status_code, 400)
+
+    def test_sucess(self):
+        _create_group0()
+        res = self.client.post('/1/register', {'phone_number': '0911123123', 'password': '1'})
+        self.assertEqual(res.status_code, 200)
 
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)
@@ -81,7 +106,7 @@ class CancelOrderTest(TestCase):
     def test_order_delete_api(self):
         o0 = _create_order0()
         o0_id = o0.id
-        res = _login_through_api(self, _User0.email, _User0.password)
+        res = _login_through_api(self, _User0.username, _User0.password)
         self.assertEqual(res.status_code, 200)
         res = self.client.post('/1/cancel', {'number_slip_index': o0.id})
         self.assertEqual(res.status_code, 200)
@@ -93,7 +118,7 @@ class CancelOrderTest(TestCase):
         o0_id = o0.id
         res = self.client.post('/1/cancel', {'number_slip_index': o0.id})
         self.assertEqual(res.status_code, 302)
-        res = _login_through_api(self, _User0.email, _User0.password)
+        res = _login_through_api(self, _User0.username, _User0.password)
         self.assertEqual(res.status_code, 200)
         res = self.client.post('/1/cancel', {'number_slip_index': o0.id})
         self.assertEqual(res.status_code, 200)
@@ -108,7 +133,7 @@ class MenuTest(TestCase):
         res = self.client.get('/1/menu', {'rest_id':1})
         self.assertEqual(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertEqual(d, [{u'id': 1, u'price': 100, u'pic_url': u'', u'name': u'M0', u'restaurant': 1}])
+        self.assertEqual(d, [{u'id': 1, u'price': 100, u'pic_url': u'', u'name': u'M0', u'restaurant': 1, u'status': 0}])
 
 class OldAPITest(TestCase):
     def test_old_suggestions(self):
@@ -154,7 +179,7 @@ class OldAPITest(TestCase):
         o0 = _create_order0()
         res = self.client.post('/status.php')
         self.assertEqual(res.status_code, 400)
-        res = self.client.post('/status.php', {'username': _User0.email})
+        res = self.client.post('/status.php', {'username': _User0.username})
         self.assertEqual(res.status_code, 200)
         d = json.loads(res.content)
         # strip time before comparison
