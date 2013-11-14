@@ -23,10 +23,11 @@ class RestaurantAdmin(admin.ModelAdmin):
 
 class MealAdmin(admin.ModelAdmin):
     # FIXME: show pic_url somehow (thumbnail?)
-    list_display = ('restaurant', 'name', 'price', 'status')
+    list_display = ('restaurant', 'name', 'price', 'status', 'pic_tag')
 
     search_fields = ['name', 'restaurant__name']
     list_filter = ['restaurant__name']
+
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem

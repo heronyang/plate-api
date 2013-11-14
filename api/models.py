@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from uuidfield import UUIDField
 from django.contrib.auth.models import User, Group
+from const import Urls
 import uuid
 import re
 
@@ -98,6 +99,15 @@ class Meal(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    # get the picture of the meal in HTML
+    def pic_tag(self):
+        if not self.pic_url:
+            # return "image not found" image
+            return u'<img src="%s" />' % Urls.EMPTY_PLATE_IMAGE_URL
+        return u'<img src="%s" />' % self.pic_url
+    pic_tag.short_description = "Meal Image"
+    pic_tag.allow_tags = True
 
     def order_create(self, user, amount, time=None, note=None):
         # FIXME: meals could sell out
