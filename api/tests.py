@@ -71,6 +71,15 @@ class RegisterTest(TestCase):
         res = self.client.post('/1/register', {'phone_number': '0911123123', 'password': '1'})
         self.assertEqual(res.status_code, 200)
 
+class ActivateTest(TestCase):
+    def test_not_listed(self):
+        res = self.client.get('/1/activate', {'code':'xxx'})
+        self.assertEqual(res.status_code, 401)
+
+    def test_success(self):
+        #FIXME: don't know how to test if the message is sent by SMS
+        pass
+
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)
     r0.save()
