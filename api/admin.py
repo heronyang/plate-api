@@ -17,13 +17,12 @@ class MyUserAdmin(UserAdmin):
 
 class RestaurantAdmin(admin.ModelAdmin):
     # FIXME: symbolic names for 'location'
-    list_display = ('name', 'location')
+    list_display = ('name', 'pic_tag', 'location_name')
     search_fields = ['name']
     list_filter = ['location']
 
 class MealAdmin(admin.ModelAdmin):
-    # FIXME: show pic_url somehow (thumbnail?)
-    list_display = ('restaurant', 'name', 'price', 'status', 'pic_tag')
+    list_display = ('restaurant', 'name', 'price', 'status', 'pic_tag', 'pic_url')
 
     search_fields = ['name', 'restaurant__name']
     list_filter = ['restaurant__name']

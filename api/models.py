@@ -87,6 +87,23 @@ class Restaurant(models.Model):
     name = models.CharField(max_length=RESTAURANT_NAME_MAX)
     pic_url = models.URLField(blank=True)
     location = models.IntegerField(default=0) # Enum like
+
+    # get the picture of the meal in HTML
+    def pic_tag(self):
+        if not self.pic_url:
+            # return "image not found" image
+            return u'<img width="200" src="%s" />' % Urls.EMPTY_PLATE_IMAGE_URL
+        return u'<img width="200" src="%s" />' % self.pic_url
+    pic_tag.short_description = "Restaurant Image"
+    pic_tag.allow_tags = True
+
+    # map the location to the real name
+    def location_name(self):
+        location_names = ["其他", "女二餐", "第二餐廳", "第一餐廳"]
+        if len(location_names) > self.location:
+            return location_names[self.location]
+        return location_names[0]
+
     def __unicode__(self):
         return self.name
 
@@ -104,8 +121,8 @@ class Meal(models.Model):
     def pic_tag(self):
         if not self.pic_url:
             # return "image not found" image
-            return u'<img src="%s" />' % Urls.EMPTY_PLATE_IMAGE_URL
-        return u'<img src="%s" />' % self.pic_url
+            return u'<img width="200" src="%s" />' % Urls.EMPTY_PLATE_IMAGE_URL
+        return u'<img width="200" src="%s" />' % self.pic_url
     pic_tag.short_description = "Meal Image"
     pic_tag.allow_tags = True
 
