@@ -23,6 +23,7 @@ CONTENT_TYPE_TEXT = 'text/plain'
 @csrf_exempt
 @require_POST
 def register(request):
+    #FIXME: add password type, if raw is using un-decode ones
     res = HttpResponse(content_type=CONTENT_TYPE_JSON)
     try:
         phone_number = request.POST['phone_number']
@@ -34,6 +35,8 @@ def register(request):
     if not phone_number or not password:
         res.status_code = 400   # wrong input
         return res
+
+    #FIXME: if the profile is already exist
 
     new_profile = Profile().create(phone_number=phone_number,
                                    password=password,
