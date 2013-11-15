@@ -1,5 +1,8 @@
 *.log
 *.pot
 *.pyc
+static/*
+media/*
+log/*
 local_settings.py
 plate.sqlite3
