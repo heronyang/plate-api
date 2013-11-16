@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import uuid
+import re
+import logging
+
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -7,15 +11,45 @@ from django.utils import timezone
 from uuidfield import UUIDField
 from django.contrib.auth.models import User, Group
 from const import Urls
-import uuid
-import re
+from django.core.urlresolvers import reverse
+from django.db.utils import IntegrityError
 
+logger = logging.getLogger(__name__)
 
 RESTAURANT_NAME_MAX = 33
 MEAL_NAME_MAX = 85
 
+def is_valid_phone_number(phone_number):
+    # only support cell phone number so far, like 0912123123
+    if re.match(r'^09(\d{8})$', phone_number):
+        return True
+    return False
+
+def is_valid_password(password):
+    if re.match(r'^[A-Za-z0-9]{8,}$', password):
+        return True
+    return False
+
 # FIXME: https://docs.djangoproject.com/en/dev/ref/contrib/auth/
 # django.contrib.auth.User requires a alphanumeric 'username' field
+
+class Configuration(models.Model):
+    unit_test_mode = models.BooleanField()
+
+    @classmethod
+    def get0(cls):
+        return cls.objects.get(pk=1)
+
+def db_init(unit_test_mode=True):
+    (vendor_group, vendor_group_created) = Group.objects.get_or_create(name='vendor')
+    if vendor_group_created:
+        vendor_group.save()
+    (user_group, user_group_created) = Group.objects.get_or_create(name='user')
+    if user_group_created:
+        user_group.save()
+
+    c = Configuration(unit_test_mode=unit_test_mode)
+    c.save()
 
 class Profile(models.Model):
     # additional info keyed on User
@@ -23,38 +57,43 @@ class Profile(models.Model):
     phone_number = models.CharField(max_length=20)
     pic_url = models.URLField(blank=True)
 
-    def create(self, phone_number, password, role):
+    @staticmethod
+    def create(phone_number, password, role, add_registration=True):
 
-        # check if the user is exist already
-        if User.objects.filter(username=phone_number).count():
-            print "User exist already"
-            return False
+        if not is_valid_phone_number(phone_number):
+            raise IntegrityError('invalid phone number "%s"' % (phone_number,))
 
-        # check if invalid phone number if valid
-        if not self.__check_valid_phone_number(phone_number):
-            print "Wrong phone number format"
-            return False
+        if not is_valid_password(password):
+            raise IntegrityError('invalid password')
 
-        # phone_number
-        self.phone_number = phone_number
-
-        # user
+        # FIXME: commit user, group, profile in same txn
         user = User.objects.create_user(username=phone_number, password=password)
         user.is_active = False
         user.save()
-        self.user = user
 
-        # add to group
         group = Group.objects.get(name=role)
         group.user_set.add(user)
 
-        # send registeration code
+        profile = Profile(user=user,
+                phone_number=phone_number)
+        profile.save()
+
+        if add_registration:
+            m = profile.add_user_registration()
+            c = Configuration.get0()
+            if not c.unit_test_mode:
+                profile.__send_verification_message(m)
+        return profile
+
+    def add_user_registration(self):
+        '-> verification_msg'
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
         ur = UserRegistration(user=self.user, code=code, ctime=timezone.now())
         ur.save()
-        self.__send_verification(code)
-
-        return self
+        # FIXME: generate URL
+        url = 'http://localhost:8000' + reverse('activate') + '?code=' + code.hex
+        message = '歡迎加入Plate點餐的行列，點選一下連結以啟動帳號！ ' + url
+        return message
 
     def activate(self):
         # set the user is_active
@@ -67,18 +106,8 @@ class Profile(models.Model):
             ur.clicked = True
             ur.save()
 
-    def __check_valid_phone_number(self, phone_number):
-        # only support cell phone number so far, like 0912123123
-        if re.match( r'^09(\d{8})$', phone_number ):
-            return True
-        return False
-
-    def __send_verification(self, code):
-        #FIXME: Send request to send SMS, and the URL is different when local developing
-        url = "http://localhost:8000/1/activate"
-        message = "歡迎加入Plate點餐的行列，點選一下連結以啟動帳號！ " + url + "?code=" + code.hex
-        print message
-        return
+    def __send_verification_message(self, msg):
+        assert(0)
 
     def __unicode__(self):
         return self.phone_number

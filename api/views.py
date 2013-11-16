@@ -38,22 +38,19 @@ def register(request):
 
     #FIXME: if the profile is already exist
 
-    new_profile = Profile().create(phone_number=phone_number,
-                                   password=password,
-                                   role="user")
-
-    if not new_profile:
+    try:
+        new_profile = Profile().create(phone_number=phone_number,
+                                       password=password,
+                                       role="user")
+    except IntegrityError, e:
         res.status_code = 400   # bad request
+        try:
+            res.content = e.args[0]
+        except IndexError:
+            pass
         return res
 
-    new_profile.save()
-
-    if new_profile:
-        res.status_code = 200
-        res.content = password
-    else:
-        res.status_code = 401   # can't create user
-
+    res.status_code = 200
     return res
 
 @csrf_exempt

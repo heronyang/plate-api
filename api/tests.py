@@ -11,65 +11,75 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+import api.models
 from api.models import *
 
 class _User0(object):
-    username = '0900111222'
-    password = 'u0pw'
+    phone_number = '0912345678'
+    username = phone_number
+    password = 'u0pw1234'
 
     @classmethod
-    def create(cls):
-        um = get_user_model()
-        u0 = um.objects.create_user(username=cls.username, password=cls.password)
-        u0.save()
-        return u0
+    def groups_create(cls):
+        (vendor_group, vendor_group_created) = Group.objects.get_or_create(name='vendor')
+        if vendor_group_created:
+            vendor_group.save()
+        (user_group, user_group_created) = Group.objects.get_or_create(name='user')
+        if user_group_created:
+            user_group.save()
+
+    @classmethod
+    def create(cls, is_active=None):
+        cls.groups_create()
+        p0 = Profile.create(phone_number=cls.phone_number,
+                password=cls.password,
+                role='user', add_registration=False)
+
+        u = p0.user
+        if is_active is not None:
+            u.is_active = True
+            u.save()
+        return u
 
 def _login_through_api(testcase, username, password):
     return testcase.client.post('/1/login', {'username': username, 'password': password })
 
 class LoginTest(TestCase):
     def test_create_user(self):
-        cls = type(self)
         um = get_user_model()
         u0 = _User0.create()
         self.assertEqual(um.objects.get(username=_User0.username).id, u0.id)
 
     def test_login_success(self):
-        cls = type(self)
-        u0 = _User0.create()
+        u0 = _User0.create(is_active=True)
         res = _login_through_api(self, _User0.username, _User0.password)
         self.assertEqual(res.status_code, 200)
 
     def test_login_failure(self):
-        cls = type(self)
-        u0 = _User0.create()
+        u0 = _User0.create(is_active=True)
         res = _login_through_api(self, _User0.username, _User0.password + 'XXX')
         self.assertEqual(res.status_code, 401)
 
-def _create_group0():
-    vendor_group = Group.objects.get_or_create(name="vendor")
-    user_group = Group.objects.get_or_create(name="user")
-
 class RegisterTest(TestCase):
     def test_bad_requests(self):
-        _create_group0()
         res = self.client.post('/1/register', {'phone_number': ''})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format0(self):
-        _create_group0()
         res = self.client.post('/1/register', {'phone_number': '091112312', 'password': '1'})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format1(self):
-        _create_group0()
         res = self.client.post('/1/register', {'phone_number': '0911123123', 'password': ''})
         self.assertEqual(res.status_code, 400)
 
-    def test_sucess(self):
-        _create_group0()
-        res = self.client.post('/1/register', {'phone_number': '0911123123', 'password': '1'})
+    def test_success(self):
+        api.models.db_init(unit_test_mode=True)
+        res = self.client.post('/1/register', {'phone_number': '0911123123', 'password': _User0.password})
         self.assertEqual(res.status_code, 200)
+
+    def test_generate_user_registration_message(self):
+        pass
 
 class ActivateTest(TestCase):
     def test_not_listed(self):
@@ -77,8 +87,17 @@ class ActivateTest(TestCase):
         self.assertEqual(res.status_code, 401)
 
     def test_success(self):
-        #FIXME: don't know how to test if the message is sent by SMS
-        pass
+        u0 = _User0.create()
+        m = u0.profile.add_user_registration()
+        rs = UserRegistration.objects.filter(user=u0)
+        assert(len(rs) == 1)
+        start = m.find('/1/activate')
+        end = m.find(' ', start)
+        if end == -1:
+            url = m[start]
+        else:
+            url = m[start:end]
+        self.client.get(url)
 
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)
@@ -92,14 +111,14 @@ def _create_meal0():
     return m0
 
 def _create_order0():
-    u0 = _User0.create()
+    u0 = _User0.create(is_active=True)
     m0 = _create_meal0()
     o0 = m0.order_create(user=u0, amount=1)
     return o0
 
 def _create_meal_recommendation():
     m0 = _create_meal0()
-    u0 = _User0.create()
+    u0 = _User0.create(is_active=True)
     mr0 = MealRecommendation(meal=m0, user=u0, description='recommendation description test')
     mr0.save()
     return mr0
