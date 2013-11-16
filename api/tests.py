@@ -75,8 +75,10 @@ class RegisterTest(TestCase):
 
     def test_success(self):
         api.models.db_init(unit_test_mode=True)
-        res = self.client.post('/1/register', {'phone_number': '0911123123', 'password': _User0.password})
+        res = self.client.post('/1/register', {'phone_number': _User0.phone_number, 'password': _User0.password})
         self.assertEqual(res.status_code, 200)
+        rs = UserRegistration.objects.filter(user__profile__phone_number=_User0.phone_number)
+        assert(len(rs) == 1)
 
     def test_generate_user_registration_message(self):
         pass
@@ -88,16 +90,23 @@ class ActivateTest(TestCase):
 
     def test_success(self):
         u0 = _User0.create()
-        m = u0.profile.add_user_registration()
-        rs = UserRegistration.objects.filter(user=u0)
-        assert(len(rs) == 1)
+        m = u0.profile.add_user_registration(url_prefix='')
         start = m.find('/1/activate')
-        end = m.find(' ', start)
+        end = m.find('?code=', start)
+        self.assertNotEqual(start, -1)
+        self.assertNotEqual(end, -1)
+        url = m[start:end]
+        (start, end) = ((end + len('?code=')), m.find(' ', start))
         if end == -1:
-            url = m[start]
+            code = m[start:]
         else:
-            url = m[start:end]
-        self.client.get(url)
+            code = m[start:end]
+        self.assertEqual(url, '/1/activate')
+        res = self.client.get(url, {'code': code})
+        self.assertEqual(res.status_code, 200)
+        # u0: reload
+        u0 = User.objects.get(pk=u0.id)
+        self.assertEqual(u0.is_active, True)
 
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)

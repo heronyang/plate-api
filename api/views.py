@@ -36,10 +36,9 @@ def register(request):
         res.status_code = 400   # wrong input
         return res
 
-    #FIXME: if the profile is already exist
-
+    #FIXME: add device password if profile already exists
     try:
-        new_profile = Profile().create(phone_number=phone_number,
+        profile = Profile().create(phone_number=phone_number,
                                        password=password,
                                        role="user")
     except IntegrityError, e:
@@ -50,34 +49,44 @@ def register(request):
             pass
         return res
 
+    url_prefix = request.build_absolute_uri()[:-len(request.get_full_path())]
+    wsgi_mount_point = request.path[:-len(request.path_info)]
+    if wsgi_mount_point:
+         url_prefix += wsgi_mount_point
+    m = profile.add_user_registration(url_prefix)
+    c = Configuration.get0()
+    if not c.unit_test_mode:
+        profile.__send_verification_message(m)
+
     res.status_code = 200
     return res
 
 @csrf_exempt
 @require_GET
 def activate(request):
-    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
 
     #FIXME: check if the record is clicked
     code = request.GET['code']
-    ur_list = UserRegistration.objects.filter(code=code)
-
-    if not ur_list or ur_list.count() < 1:
-        res.status_code = 401   # registration record not found
+    try:
+        ur = UserRegistration.objects.get(code=code)
+    except UserRegistration.DoesNotExist:
+        res.status_code = 401
         return res
 
-    user = ur_list[0].user
-    profile_list = Profile.objects.filter(user=user)
+    if ur.clicked:
+        res.status_code = 203
+        res.content = 'Already clicked'
+    else:
+        try:
+            ur.activate()
+        except IntegrityError, e:
+            res = status = 400
+            res.content = e.message
+            return res
 
-    if not profile_list or profile_list.count() < 1:
-        res.status_code = 401   # profile not exist
-        return res
-
-    profile = profile_list[0]
-    profile.activate()          # activate the profile here
-
-    res.status_code = 200
-    res.content = "Success!"
+        res.status_code = 200
+        res.content = 'Success!'
     return res
 
 @csrf_exempt

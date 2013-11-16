@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 RESTAURANT_NAME_MAX = 33
 MEAL_NAME_MAX = 85
+PASSWORD_MAX = 50
 
 def is_valid_phone_number(phone_number):
     # only support cell phone number so far, like 0912123123
@@ -77,34 +78,17 @@ class Profile(models.Model):
         profile = Profile(user=user,
                 phone_number=phone_number)
         profile.save()
-
-        if add_registration:
-            m = profile.add_user_registration()
-            c = Configuration.get0()
-            if not c.unit_test_mode:
-                profile.__send_verification_message(m)
         return profile
 
-    def add_user_registration(self):
+    def add_user_registration(self, url_prefix):
         '-> verification_msg'
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
         ur = UserRegistration(user=self.user, code=code, ctime=timezone.now())
         ur.save()
         # FIXME: generate URL
-        url = 'http://localhost:8000' + reverse('activate') + '?code=' + code.hex
+        url = url_prefix + reverse('activate') + '?code=' + code.hex
         message = '歡迎加入Plate點餐的行列，點選一下連結以啟動帳號！ ' + url
         return message
-
-    def activate(self):
-        # set the user is_active
-        self.user.is_active = True
-        self.user.save()
-
-        # set the registration record to clicked
-        # all the past SMS sent from this user will no longer to active the account
-        for ur in UserRegistration.objects.filter(user=self.user):
-            ur.clicked = True
-            ur.save()
 
     def __send_verification_message(self, msg):
         assert(0)
@@ -212,3 +196,15 @@ class UserRegistration(models.Model):
     user = models.ForeignKey(get_user_model())
     clicked = models.BooleanField(default=False)
     ctime = models.DateTimeField('time entered')
+    password = models.CharField(max_length=PASSWORD_MAX)
+
+    def activate(self):
+        if self.clicked:
+            raise IntegrityError('Already activated')
+        self.clicked = True
+        self.save()
+        user = self.user
+        user.is_active = True
+        user.save()
+
+        # FIXME: DevicePassword
