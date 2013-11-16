@@ -28,32 +28,38 @@ def register(request):
     try:
         phone_number = request.POST['phone_number']
         password = request.POST['password']
+        password_type = request.POST['password_type']
     except MultiValueDictKeyError:
         res.status_code = 400
         return res
 
-    if not phone_number or not password:
+    if not phone_number:
         res.status_code = 400   # wrong input
         return res
 
-    #FIXME: add device password if profile already exists
-    try:
-        profile = Profile().create(phone_number=phone_number,
-                                       password=password,
-                                       role="user")
-    except IntegrityError, e:
-        res.status_code = 400   # bad request
-        try:
-            res.content = e.args[0]
-        except IndexError:
-            pass
+    if not is_valid_password(password):
+        res.status_code = 400   # wrong input
         return res
+
+    if password_type == 'raw':
+        h = PBKDF2PasswordHasher()
+        password = h.encode(password, h.salt())
+    elif password_type == 'encoded':
+        pass
+        #FIXME: verify encoded_password is a 3 part hash
+        # (algo, salt, encoded)
+    else:
+        res.status_code = 400
+        return res
+
+    (profile, profile_created) = Profile.get_or_create(phone_number=phone_number, role='user')
 
     url_prefix = request.build_absolute_uri()[:-len(request.get_full_path())]
     wsgi_mount_point = request.path[:-len(request.path_info)]
     if wsgi_mount_point:
          url_prefix += wsgi_mount_point
-    m = profile.add_user_registration(url_prefix)
+
+    m = profile.add_user_registration(url_prefix, password=password)
     c = Configuration.get0()
     if not c.unit_test_mode:
         profile.__send_verification_message(m)
@@ -82,7 +88,7 @@ def activate(request):
             ur.activate()
         except IntegrityError, e:
             res = status = 400
-            res.content = e.message
+            res.content = e.args[0]
             return res
 
         res.status_code = 200

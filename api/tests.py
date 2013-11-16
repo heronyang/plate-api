@@ -31,14 +31,14 @@ class _User0(object):
     @classmethod
     def create(cls, is_active=None):
         cls.groups_create()
-        p0 = Profile.create(phone_number=cls.phone_number,
-                password=cls.password,
+        (p0, p0_created) = Profile.get_or_create(phone_number=cls.phone_number,
                 role='user', add_registration=False)
 
         u = p0.user
-        if is_active is not None:
-            u.is_active = True
-            u.save()
+        if is_active:
+            p0.add_user_registration(url_prefix='', raw_password=cls.password)
+            ur = UserRegistration.objects.get(user=p0.user)
+            ur.activate()
         return u
 
 def _login_through_api(testcase, username, password):
@@ -66,16 +66,17 @@ class RegisterTest(TestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format0(self):
-        res = self.client.post('/1/register', {'phone_number': '091112312', 'password': '1'})
+        res = self.client.post('/1/register', {'phone_number': '091112312',  'password_type': 'raw', 'password': '1'})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format1(self):
-        res = self.client.post('/1/register', {'phone_number': '0911123123', 'password': ''})
+        res = self.client.post('/1/register', {'phone_number': '0911123123',  'password_type': 'raw', 'password': ''})
         self.assertEqual(res.status_code, 400)
 
     def test_success(self):
         api.models.db_init(unit_test_mode=True)
-        res = self.client.post('/1/register', {'phone_number': _User0.phone_number, 'password': _User0.password})
+        res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
+            'password_type': 'raw', 'password': _User0.password})
         self.assertEqual(res.status_code, 200)
         rs = UserRegistration.objects.filter(user__profile__phone_number=_User0.phone_number)
         assert(len(rs) == 1)
@@ -90,7 +91,7 @@ class ActivateTest(TestCase):
 
     def test_success(self):
         u0 = _User0.create()
-        m = u0.profile.add_user_registration(url_prefix='')
+        m = u0.profile.add_user_registration(url_prefix='', raw_password=_User0.password)
         start = m.find('/1/activate')
         end = m.find('?code=', start)
         self.assertNotEqual(start, -1)

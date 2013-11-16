@@ -160,6 +160,10 @@ LOGGING = {
     }
 }
 
+AUTHENTICATION_BACKENDS = (
+    'api.auth.PerDevicePasswordAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 try:
     from local_settings import *

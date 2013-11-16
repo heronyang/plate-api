@@ -13,6 +13,7 @@ from django.contrib.auth.models import User, Group
 from const import Urls
 from django.core.urlresolvers import reverse
 from django.db.utils import IntegrityError
+from django.contrib.auth.hashers import PBKDF2PasswordHasher
 
 logger = logging.getLogger(__name__)
 
@@ -59,31 +60,39 @@ class Profile(models.Model):
     pic_url = models.URLField(blank=True)
 
     @staticmethod
-    def create(phone_number, password, role, add_registration=True):
-
+    def get_or_create(phone_number, role, add_registration=True):
         if not is_valid_phone_number(phone_number):
             raise IntegrityError('invalid phone number "%s"' % (phone_number,))
 
-        if not is_valid_password(password):
-            raise IntegrityError('invalid password')
+        try:
+            profile = Profile.objects.get(phone_number=phone_number)
+        except Profile.DoesNotExist:
+            pass
+        else:
+            return (profile, False)
 
         # FIXME: commit user, group, profile in same txn
-        user = User.objects.create_user(username=phone_number, password=password)
+        user = User.objects.create_user(username=phone_number, password='')
         user.is_active = False
         user.save()
 
         group = Group.objects.get(name=role)
         group.user_set.add(user)
 
-        profile = Profile(user=user,
-                phone_number=phone_number)
+        profile = Profile(user=user, phone_number=phone_number)
         profile.save()
-        return profile
+        return (profile, True)
 
-    def add_user_registration(self, url_prefix):
-        '-> verification_msg'
+    def add_user_registration(self, url_prefix, password=None, raw_password=None):
+        if (password is None) and (raw_password is None):
+            raise TypeError()
+
+        if password is None:
+            h = PBKDF2PasswordHasher()
+            password = h.encode(raw_password, h.salt())
+
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
-        ur = UserRegistration(user=self.user, code=code, ctime=timezone.now())
+        ur = UserRegistration(code=code, user=self.user, password=password, ctime=timezone.now())
         ur.save()
         # FIXME: generate URL
         url = url_prefix + reverse('activate') + '?code=' + code.hex
@@ -194,9 +203,9 @@ class MealRecommendation(models.Model):
 class UserRegistration(models.Model):
     code = UUIDField(auto=True)
     user = models.ForeignKey(get_user_model())
-    clicked = models.BooleanField(default=False)
-    ctime = models.DateTimeField('time entered')
     password = models.CharField(max_length=PASSWORD_MAX)
+    clicked = models.BooleanField(default=False)
+    ctime = models.DateTimeField('time entered', auto_now=True)
 
     def activate(self):
         if self.clicked:
