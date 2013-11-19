@@ -173,6 +173,18 @@ class MenuTest(TestCase):
         d = json.loads(res.content)
         self.assertEqual(d, [{u'id': 1, u'price': 100, u'pic_url': u'', u'name': u'M0', u'restaurant': 1, u'status': 0}])
 
+class RestaurantsTest(TestCase):
+    def test_restaurant_get(self):
+        r0 = _create_restaurant0()
+        self.client.logout()
+        res = self.client.get('/1/restaurants')
+        self.assertEqual(res.status_code, 400)
+
+        res = self.client.get('/1/restaurants', {'location':1})
+        self.assertEqual(res.status_code, 200)
+        d = json.loads(res.content)
+        self.assertEqual(d, [{u'capacity': 99, u'current_number_slip': 0, u'id': 1, u'location': 1, u'name': u'R0', u'pic_url': u'', u'status': 0}])
+
 class OldAPITest(TestCase):
     def test_old_suggestions(self):
         self.client.logout()

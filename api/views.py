@@ -168,7 +168,15 @@ class OrderView(django.views.generic.base.View):
 @csrf_exempt
 @require_GET
 def restaurants(request):
-    assert(0)
+    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
+    try:
+        location_key = request.GET['location']
+    except MultiValueDictKeyError:
+        res.status_code = 400
+        return res
+    res.status_code = 200
+    res.content = jsonate(Restaurant.objects.filter(location=location_key))
+    return res
 
 @csrf_exempt
 @require_GET
