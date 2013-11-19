@@ -41,7 +41,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     search_fields = ['user__email', 'restaurant__name']
     list_filter = ['restaurant']
-    #date_hierarchy = 'ctime'
+    date_hierarchy = 'ctime'
 
 class MealRecommendationsAdmin(admin.ModelAdmin):
     list_display = ('email', 'restaurant_name', 'meal_name')
