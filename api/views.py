@@ -269,7 +269,7 @@ def old_status(request):
         res.content = json.dumps({'error': 'missing username'})
         return res
 
-    orders = Order.objects.filter(user__username=username).order_by('-time')
+    orders = Order.objects.filter(user__username=username).order_by('-ctime')
     out = {}
     if orders:
         out['success'] = True
@@ -279,7 +279,7 @@ def old_status(request):
     for i in orders:
         oi = i.orderitem_set.all()[0]
         restaurant = oi.meal.restaurant
-        l.append(dict(time=i.time,
+        l.append(dict(time=i.ctime,
                       number_slip_index=i.id,
                       number_slip=i.pos_slip_number,
                       rest_id=restaurant.id,

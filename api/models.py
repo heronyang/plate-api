@@ -58,6 +58,7 @@ class Profile(models.Model):
     user = models.OneToOneField(get_user_model())
     phone_number = models.CharField(max_length=20)
     pic_url = models.URLField(blank=True)
+    ctime = models.DateTimeField(auto_now_add=True)
 
     @staticmethod
     def get_or_create(phone_number, role, add_registration=True):
@@ -109,6 +110,9 @@ class Restaurant(models.Model):
     name = models.CharField(max_length=RESTAURANT_NAME_MAX)
     pic_url = models.URLField(blank=True)
     location = models.IntegerField(default=0) # Enum like
+    status = models.IntegerField(default=0) # Enum like
+    current_number_slip = models.IntegerField(default=0) # the last continous number slip
+    capacity = models.IntegerField(default=99)
 
     # get the picture of the meal in HTML
     def pic_tag(self):
@@ -154,7 +158,7 @@ class Meal(models.Model):
             time = timezone.now()
         if note is None:
             note = ''
-        order = Order(time=time, user=user, restaurant=self.restaurant)
+        order = Order(ctime=time, user=user, restaurant=self.restaurant)
         order.save()
         oi = OrderItem(meal=self, amount=amount, order=order, note=note)
         oi.save()
@@ -169,7 +173,9 @@ class Meal(models.Model):
 
 class Order(models.Model):
     #FIXME:add ctime, mtime
-    time = models.DateTimeField('time entered')
+    #time = models.DateTimeField('time entered')
+    ctime = models.DateTimeField(auto_now_add=True)
+    mtime = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(get_user_model())
     restaurant = models.ForeignKey(Restaurant)
     pos_slip_number = models.IntegerField(blank=True, null=True) # the number printed on the slip by the Point-Of-Sale system

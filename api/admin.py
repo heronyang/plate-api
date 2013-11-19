@@ -34,14 +34,14 @@ class OrderItemInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
-    list_display = ('time', 'email', 'restaurant', 'pos_slip_number', 'status')
+    list_display = ('ctime', 'mtime', 'email', 'restaurant', 'pos_slip_number', 'status')
 
     def email(self, order):
         return order.user.email
 
     search_fields = ['user__email', 'restaurant__name']
     list_filter = ['restaurant']
-    date_hierarchy = 'time'
+    #date_hierarchy = 'ctime'
 
 class MealRecommendationsAdmin(admin.ModelAdmin):
     list_display = ('email', 'restaurant_name', 'meal_name')
