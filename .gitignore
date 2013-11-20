@@ -1,6 +1,9 @@
 *.log
 *.pot
 *.pyc
+*.swp
+*.swo
+*.orig
 static/*
 media/*
 log/*

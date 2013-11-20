@@ -225,6 +225,7 @@ class OldAPITest(TestCase):
                              u'success': 1})
 
     def test_old_status(self):
+        # FIXME: needs response limit, will list all historical orders as written
         self.client.logout()
         o0 = _create_order0()
         res = self.client.post('/status.php')
