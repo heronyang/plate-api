@@ -171,7 +171,7 @@ class MenuTest(TestCase):
         res = self.client.get('/1/menu', {'rest_id':1})
         self.assertEqual(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertEqual(d, [{u'id': 1, u'price': 100, u'pic_url': u'', u'name': u'M0', u'restaurant': 1, u'status': 0}])
+        self.assertEqual(d, [{u'id': 1, u'price': 100, u'pic_url': u'', u'meal_category': None, u'name': u'M0', u'restaurant': 1, u'status': 0}])
 
 class RestaurantsTest(TestCase):
     def test_restaurant_get(self):
