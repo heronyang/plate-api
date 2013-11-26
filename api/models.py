@@ -162,11 +162,9 @@ class Meal(models.Model):
 
     def order_create(self, user, amount, time=None, note=None):
         # FIXME: meals could sell out
-        if time is None:
-            time = timezone.now()
         if note is None:
             note = ''
-        order = Order(ctime=time, user=user, restaurant=self.restaurant)
+        order = Order(user=user, restaurant=self.restaurant)
         order.save()
         oi = OrderItem(meal=self, amount=amount, order=order, note=note)
         oi.save()
@@ -180,7 +178,6 @@ class Meal(models.Model):
         oi.save()
 
 class Order(models.Model):
-    #FIXME:add ctime, mtime
     #time = models.DateTimeField('time entered')
     ctime = models.DateTimeField(auto_now_add=True)
     mtime = models.DateTimeField(auto_now=True)

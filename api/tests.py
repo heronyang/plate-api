@@ -109,13 +109,106 @@ class ActivateTest(TestCase):
         u0 = User.objects.get(pk=u0.id)
         self.assertEqual(u0.is_active, True)
 
+class OrderTest(TestCase):
+    def test_no_auth(self):
+        self.client.logout()
+        res = self.client.post('/1/order')
+        self.assertEqual(res.status_code, 302)
+
+        u0 = _User0.create()
+        r0 = _create_restaurant0();
+        res = self.client.post('/1/order', {'rest_id': r0.id})
+        self.assertEqual(res.status_code, 302)
+
+    def test_wrong_input0(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        r0 = _create_restaurant0();
+        res = self.client.post('/1/order', {'rest_id': r0.id})
+        self.assertEqual(res.status_code, 400)
+
+    def test_wrong_input1(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        r0 = _create_restaurant0();
+        m0 = _create_meal0()
+        res = self.client.post('/1/order', {'rest_id': r0.id,
+            'order': json.dumps([{'meal_id': m0.id, 'amount': 2}]) + '???',
+                })
+        self.assertEqual(res.status_code, 400)
+
+    def test_wrong_input2(self):    # empty order
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        r0 = _create_restaurant0();
+        m0 = _create_meal0()
+        res = self.client.post('/1/order', {'rest_id': r0.id,
+            'order': '',
+                })
+        self.assertEqual(res.status_code, 400)
+
+    def test_different_rest(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        m1 = _create_meal0()
+        res = self.client.post('/1/order', {'order': json.dumps([{'meal_id': m0.id, 'amount': 2}, {'meal_id': m1.id, 'amount': 3}]),
+                })
+        self.assertEqual(res.status_code, 400)
+
+    def test_success(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+        res = self.client.post('/1/order', {'order': jd})
+
+        self.assertEqual(res.status_code, 200)
+
+        o = Order.objects.get()
+        oi = o.orderitem_set.get()
+        self.assertEqual(oi.meal.id, m0.id)
+        self.assertEqual(oi.amount, 2)
+
+    def test_multi_meals_success(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        m1 = _create_meal0(create_new_restaurant=False)    #
+
+        res = self.client.post('/1/order', {'order': json.dumps([{'meal_id': m0.id, 'amount': 2}, {'meal_id': m1.id, 'amount': 3}]),
+                })
+        self.assertEqual(res.status_code, 200)
+
+        o = Order.objects.get()
+        oi0 = o.orderitem_set.get(pk=1)
+        self.assertEqual(oi0.meal.id, m0.id)
+        self.assertEqual(oi0.amount, 2)
+
+        oi1 = o.orderitem_set.get(pk=2)
+        self.assertEqual(oi1.meal.id, m1.id)
+        self.assertEqual(oi1.amount, 3)
+
+        #FIXME: incomplete
+
+
+
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)
     r0.save()
     return r0
 
-def _create_meal0():
-    r0 = _create_restaurant0()
+def _create_meal0(create_new_restaurant=True):
+    if create_new_restaurant:
+        r0 = _create_restaurant0()
+    else:
+        r0 = Restaurant.objects.get()
     m0 = Meal(name='M0', price=100, restaurant=r0)
     m0.save()
     return m0

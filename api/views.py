@@ -115,7 +115,7 @@ def login(request):
 @require_POST
 @login_required
 def cancel(request):
-    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
     user = request.user
     # FIXME: should check "ordered_by_user or is_order_vendor or is_superuser"
     if not user.is_authenticated():
@@ -148,20 +148,67 @@ def menu(request):
     return res
 
 class OrderView(django.views.generic.base.View):
+
     @method_decorator(csrf_exempt)
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
+        res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+        user = request.user
+
         # create new order
         # FIXME: should check 'can_place_order'
-        if not user.is_authenticated():
-            res.status_code = 401
+
+        try:
+            order_json = request.POST['order']
+        except MultiValueDictKeyError:
+            res.content = "post error"
+            res.status_code = 400
             return res
-        restaurant_key = request.POST['rest_id']
+
+        try:
+            order_data = json.loads(order_json)
+        except ValueError:
+            res.content = "json parsing error"
+            res.status_code = 400
+            return res
+
+        if not order_data:
+            res.content = "empty order"
+            res.status_code = 400
+            return res
+
+        # check if all meals are from the same restaurant
+        m = order_data[0]['meal_id']
+        rest_id = Meal.objects.get(pk=m).restaurant.id
+
+        for i in order_data[1:]:
+            m = i['meal_id']
+            if rest_id != Meal.objects.get(pk=m).restaurant.id:
+                res.content = "must be in the same restaurant"
+                res.status_code = 400
+                return res
+
+        # FIXME: does it make more sense to implement 'order_create' at Restuarant?
+        i = order_data[0]
+        (meal_key, amount) = (i['meal_id'], i['amount'])
+        order = Meal.objects.get(pk=meal_key).order_create(user=user, amount=amount)
+
+        for i in order_data[1:]:
+            (meal_key, amount) = (i['meal_id'], i['amount'])
+            Meal.objects.get(pk=meal_key).order_add(amount=amount, order=order)
+
+
+        #FIXME: number slip is not completed yet
+        res.content = 13    # number slip
+        res.status_code = 200
+        return res
+
 
     @method_decorator(csrf_exempt)
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         # list eixsting order
+        res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
         assert(0)
 
 
