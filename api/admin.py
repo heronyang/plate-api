@@ -22,7 +22,7 @@ class RestaurantAdmin(admin.ModelAdmin):
     list_filter = ['location']
 
 class MealAdmin(admin.ModelAdmin):
-    list_display = ('restaurant', 'name', 'price', 'status', 'pic_tag', 'pic_url')
+    list_display = ('restaurant', 'name', 'price', 'status', 'pic_tag', 'pic_url', 'meal_category')
 
     search_fields = ['name', 'restaurant__name']
     list_filter = ['restaurant__name']
@@ -69,3 +69,4 @@ admin.site.register(Meal, MealAdmin)
 admin.site.register(Order, OrderAdmin)
 admin.site.register(MealRecommendation, MealRecommendationsAdmin)
 admin.site.register(UserRegistration, UserRegistrationAdmin)
+admin.site.register(MealCategory)

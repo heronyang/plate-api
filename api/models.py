@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 RESTAURANT_NAME_MAX = 33
 MEAL_NAME_MAX = 85
+MEALCATEGORY_NAME_MAX = 85
 PASSWORD_MAX = 50
 
 def is_valid_phone_number(phone_number):
@@ -133,12 +134,19 @@ class Restaurant(models.Model):
     def __unicode__(self):
         return self.name
 
+class MealCategory(models.Model):
+    name = models.CharField(max_length=MEALCATEGORY_NAME_MAX)
+
+    def __unicode__(self):
+        return self.name
+
 class Meal(models.Model):
     name = models.CharField(max_length=MEAL_NAME_MAX)
     pic_url = models.URLField(blank=True)
     price = models.IntegerField()
     restaurant = models.ForeignKey(Restaurant)
     status = models.IntegerField(default=0) # if sold out, or other status
+    meal_category = models.ForeignKey(MealCategory, null=True)
 
     def __unicode__(self):
         return self.name
