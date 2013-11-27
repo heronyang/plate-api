@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 RESTAURANT_NAME_MAX = 33
 MEAL_NAME_MAX = 85
 MEALCATEGORY_NAME_MAX = 85
+COMMENT_MAX = 200
 PASSWORD_MAX = 50
 
 def is_valid_phone_number(phone_number):
@@ -112,6 +113,11 @@ class Restaurant(models.Model):
     pic_url = models.URLField(blank=True)
     location = models.IntegerField(default=0) # Enum like
     status = models.IntegerField(default=0) # Enum like
+
+    # increase 1 when 1 order is added, no need to reset this field
+    number_slip = models.IntegerField(default=0)
+
+    # last number of the continous number slips
     current_number_slip = models.IntegerField(default=0) # the last continous number slip
     capacity = models.IntegerField(default=99)
 
@@ -185,6 +191,9 @@ class Order(models.Model):
     restaurant = models.ForeignKey(Restaurant)
     pos_slip_number = models.IntegerField(blank=True, null=True) # the number printed on the slip by the Point-Of-Sale system
     status = models.IntegerField(default=0)
+
+    user_comment = models.CharField(max_length=COMMENT_MAX, blank=True)
+    vendor_comment = models.CharField(max_length=COMMENT_MAX, blank=True)
 
     def __unicode__(self):
         return '%s %s' % (self.user.username, self.restaurant.name)

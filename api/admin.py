@@ -17,7 +17,7 @@ class MyUserAdmin(UserAdmin):
 
 class RestaurantAdmin(admin.ModelAdmin):
     # FIXME: symbolic names for 'location'
-    list_display = ('name', 'pic_tag', 'location_name')
+    list_display = ('name', 'pic_tag', 'location_name', 'number_slip', 'current_number_slip')
     search_fields = ['name']
     list_filter = ['location']
 
@@ -34,7 +34,7 @@ class OrderItemInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
-    list_display = ('ctime', 'mtime', 'username', 'restaurant', 'pos_slip_number', 'status')
+    list_display = ('ctime', 'mtime', 'username', 'restaurant', 'pos_slip_number', 'status', 'user_comment', 'vendor_comment')
 
     def username(self, order):
         return order.user.username
