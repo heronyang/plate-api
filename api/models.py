@@ -121,6 +121,11 @@ class Restaurant(models.Model):
     current_number_slip = models.IntegerField(default=0) # the last continous number slip
     capacity = models.IntegerField(default=99)
 
+    def new_number_slip(self):
+        self.number_slip += 1
+        self.save()
+        return self.number_slip
+
     # get the picture of the meal in HTML
     def pic_tag(self):
         if not self.pic_url:

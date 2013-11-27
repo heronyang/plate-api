@@ -169,6 +169,7 @@ class OrderTest(TestCase):
         res = self.client.post('/1/order', {'order': jd})
 
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, "1")
 
         o = Order.objects.get()
         oi = o.orderitem_set.get()
@@ -185,6 +186,7 @@ class OrderTest(TestCase):
         res = self.client.post('/1/order', {'order': json.dumps([{'meal_id': m0.id, 'amount': 2}, {'meal_id': m1.id, 'amount': 3}]),
                 })
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, "1")
 
         o = Order.objects.get()
         oi0 = o.orderitem_set.get(pk=1)
@@ -195,7 +197,25 @@ class OrderTest(TestCase):
         self.assertEqual(oi1.meal.id, m1.id)
         self.assertEqual(oi1.amount, 3)
 
-        #FIXME: incomplete
+    def test_mutli_orders_success(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+
+        res = self.client.post('/1/order', {'order': jd})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, "1")
+
+        o = Order.objects.get()
+        oi = o.orderitem_set.get()
+        self.assertEqual(oi.meal.id, m0.id)
+        self.assertEqual(oi.amount, 2)
+
+        res = self.client.post('/1/order', {'order': jd})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, "2")
 
 
 

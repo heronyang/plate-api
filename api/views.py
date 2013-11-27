@@ -179,11 +179,11 @@ class OrderView(django.views.generic.base.View):
 
         # check if all meals are from the same restaurant
         m = order_data[0]['meal_id']
-        rest_id = Meal.objects.get(pk=m).restaurant.id
+        rest = Meal.objects.get(pk=m).restaurant
 
         for i in order_data[1:]:
             m = i['meal_id']
-            if rest_id != Meal.objects.get(pk=m).restaurant.id:
+            if rest.id != Meal.objects.get(pk=m).restaurant.id:
                 res.content = "must be in the same restaurant"
                 res.status_code = 400
                 return res
@@ -199,7 +199,7 @@ class OrderView(django.views.generic.base.View):
 
 
         #FIXME: number slip is not completed yet
-        res.content = 13    # number slip
+        res.content = rest.new_number_slip()    # number slip
         res.status_code = 200
         return res
 
