@@ -110,6 +110,8 @@ class ActivateTest(TestCase):
         self.assertEqual(u0.is_active, True)
 
 class OrderTest(TestCase):
+
+    # post
     def test_no_auth(self):
         self.client.logout()
         res = self.client.post('/1/order')
@@ -172,6 +174,8 @@ class OrderTest(TestCase):
         self.assertEqual(res.content, "1")
 
         o = Order.objects.get()
+        self.assertEqual(o.pos_slip_number, int(res.content))
+
         oi = o.orderitem_set.get()
         self.assertEqual(oi.meal.id, m0.id)
         self.assertEqual(oi.amount, 2)
@@ -212,12 +216,41 @@ class OrderTest(TestCase):
         oi = o.orderitem_set.get()
         self.assertEqual(oi.meal.id, m0.id)
         self.assertEqual(oi.amount, 2)
+        # FIXME: should also check 'number_slip' is set or not
 
         res = self.client.post('/1/order', {'order': jd})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.content, "2")
 
+    # get
+    def test_get_success(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
 
+        m0 = _create_meal0()
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+        self.client.post('/1/order', {'order': jd})
+
+        res = self.client.get('/1/order')
+        d = json.loads(res.content)
+        d[0]['ctime'] = None
+        d[0]['mtime'] = None
+        self.assertEqual(d, [{u"status": 0, u"ctime": None, u"restaurant": 1, u"user_comment": "", u"vendor_comment": "", u"user": 1, u"mtime": None, u"pos_slip_number": 1, u"id": 1}])
+
+    def test_multi_order_success(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+        self.client.post('/1/order', {'order': jd})
+        self.client.post('/1/order', {'order': jd})
+
+        res = self.client.get('/1/order')
+        d = json.loads(res.content)
+        d[0]['ctime'] = None
+        d[0]['mtime'] = None
+        self.assertEqual(d, [{"status": 0, "ctime": None, "restaurant": 1, "user_comment": "", "vendor_comment": "", "user": 1, "mtime": None, "pos_slip_number": 2, "id": 2}])
 
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)
@@ -236,7 +269,7 @@ def _create_meal0(create_new_restaurant=True):
 def _create_order0():
     u0 = _User0.create(is_active=True)
     m0 = _create_meal0()
-    o0 = m0.order_create(user=u0, amount=1)
+    (o0, ns) = m0.order_create(user=u0, amount=1)
     return o0
 
 def _create_meal_recommendation():
@@ -349,7 +382,7 @@ class OldAPITest(TestCase):
         # strip time before comparison
         d['list'][0]['time'] = None
         self.assertEqual(d,
-                         {u'list': [{u'number_slip': None,
+                         {u'list': [{u'number_slip': 1,
                                      u'number_slip_index': 1,
                                      u'rest_id': 1,
                                      u'rest_name': u'R0',

@@ -175,11 +175,16 @@ class Meal(models.Model):
         # FIXME: meals could sell out
         if note is None:
             note = ''
-        order = Order(user=user, restaurant=self.restaurant)
+
+        number_slip = self.restaurant.new_number_slip()
+
+        order = Order(user=user, restaurant=self.restaurant, pos_slip_number=number_slip)
         order.save()
         oi = OrderItem(meal=self, amount=amount, order=order, note=note)
         oi.save()
-        return order
+
+        # generate a number slip
+        return (order, number_slip)
 
     def order_add(self, amount, order, note=None):
         # FIXME: meals could sell out

@@ -191,15 +191,13 @@ class OrderView(django.views.generic.base.View):
         # FIXME: does it make more sense to implement 'order_create' at Restuarant?
         i = order_data[0]
         (meal_key, amount) = (i['meal_id'], i['amount'])
-        order = Meal.objects.get(pk=meal_key).order_create(user=user, amount=amount)
+        (order, number_slip) = Meal.objects.get(pk=meal_key).order_create(user=user, amount=amount)
 
         for i in order_data[1:]:
             (meal_key, amount) = (i['meal_id'], i['amount'])
             Meal.objects.get(pk=meal_key).order_add(amount=amount, order=order)
 
-
-        #FIXME: number slip is not completed yet
-        res.content = rest.new_number_slip()    # number slip
+        res.content = number_slip
         res.status_code = 200
         return res
 
@@ -207,10 +205,21 @@ class OrderView(django.views.generic.base.View):
     @method_decorator(csrf_exempt)
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        # list eixsting order
+        # list eixsting order (only the latest one)
         res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
-        assert(0)
 
+        user = request.user
+        orders = Order.objects.filter(user=user).order_by('-ctime')
+
+        if not orders:
+            res.content = "no processing order"
+            res.status_code = 204
+            return res
+
+        last_order = orders[:1]
+        res.content = jsonate(last_order)
+        res.status_code = 200
+        return res
 
 @csrf_exempt
 @require_GET
