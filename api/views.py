@@ -217,16 +217,16 @@ class OrderView(django.views.generic.base.View):
             return res
 
         last_order = orders[:1][0]
-        order_items = OrderItem.objects.filter(order=last_order)
 
-        # FIXME: actually, more data should be returned, including 'restaurant' and 'order_item's
-        """
-        receipt = {'last_order': jsonate(last_order),
-                'restaurant': last_order.restaurant),
-                'order_items':order_items}
-        print receipt
-        """
-        receipt = last_order
+        order_items = OrderItem.objects.filter(order=last_order)
+        l = []
+        for i in order_items:
+            l.append(jsonate(i))
+
+        receipt = {}
+        receipt['last_order'] = jsonate(last_order)
+        receipt['order_items'] = l
+
         res.content = jsonate(receipt)
         res.status_code = 200
         return res
