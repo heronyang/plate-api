@@ -111,27 +111,6 @@ def login(request):
         res.status_code = 401 # unauthorized
     return res
 
-@csrf_exempt
-@require_POST
-@login_required
-def cancel(request):
-    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
-    user = request.user
-    # FIXME: should check "ordered_by_user or is_order_vendor or is_superuser"
-    if not user.is_authenticated():
-        res.status_code = 401
-        return res
-
-    order_key = request.POST['number_slip_index']
-    # FIXME: mark orders as canceled, don't delete them
-    try:
-        o = Order.objects.get(pk=order_key)
-    except Order.DoesNotExist:
-        res.status_code = 404
-    else:
-        o.delete()
-        res.status_code = 200
-    return res
 
 @csrf_exempt
 @require_GET
@@ -245,6 +224,44 @@ def restaurants(request):
     return res
 
 @csrf_exempt
+@require_POST
+@login_required
+def done(request):
+    # turn meal state from COOKING to DONE
+    assert(0)
+
+@csrf_exempt
+@require_POST
+@login_required
+def pick(request):
+    # turn meal state from DONE to PICKED
+    assert(0)
+
+@csrf_exempt
+@require_POST
+@login_required
+def cancel(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    user = request.user
+    # FIXME: should check "ordered_by_user or is_order_vendor or is_superuser"
+    if not user.is_authenticated():
+        res.status_code = 401
+        return res
+
+    order_key = request.POST['number_slip_index']
+    # FIXME: mark orders as canceled, don't delete them
+    try:
+        o = Order.objects.get(pk=order_key)
+    except Order.DoesNotExist:
+        res.status_code = 404
+    else:
+        o.delete()
+        res.status_code = 200
+    return res
+
+###
+
+@csrf_exempt
 @require_GET
 @login_required
 def user_orders(request):
@@ -255,6 +272,9 @@ def user_orders(request):
 @login_required
 def recommendations(request):
     assert(0)
+
+
+# FIXME: turn off old APIs before release, so 'cancel' won't make any mistake
 
 @csrf_exempt
 @require_GET

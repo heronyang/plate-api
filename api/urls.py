@@ -3,15 +3,24 @@ from django.conf.urls import patterns, include, url
 from api import views
 
 urlpatterns = patterns('',
+
     url(r'^1/register$', views.register, name='register'),
+    url(r'^1/activate$', views.activate, name='activate'),
     url(r'^1/login$', views.login, name='login'),
-    url(r'^1/cancel$', views.cancel, name='cancel'),
+
+    # app
+    url(r'^1/restaurants$', views.restaurants, name='restaurants'),
     url(r'^1/menu$', views.menu, name='menu'),
     url(r'^1/order$', views.OrderView.as_view(), name='order'),
-    url(r'^1/restaurants$', views.restaurants, name='restaurants'),
+
+    # vendor
+    url(r'^1/done$', views.done, name='done'),
+    url(r'^1/pick$', views.pick, name='pick'),
+    url(r'^1/cancel$', views.cancel, name='cancel'),
+
+    # not included in MVP
     url(r'^1/user-orders$', views.user_orders, name='user_orders'),
     url(r'^1/recommendations$', views.recommendations, name='recommendations'),
-    url(r'^1/activate$', views.activate, name='activate'),
 
     # Old API
     url(r'^suggestions.php$', views.old_suggestions, name='old_suggestions'),
