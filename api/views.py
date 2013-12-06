@@ -197,14 +197,29 @@ class OrderView(django.views.generic.base.View):
 
         last_order = orders[:1][0]
 
-        order_items = OrderItem.objects.filter(order=last_order)
-        l = []
-        for i in order_items:
-            l.append(jsonate(i))
+        # last_order
+        r_d = dict(name = last_order.restaurant.name,
+                   location = last_order.restaurant.location,
+                   rest_id = last_order.restaurant.id)
+        l_d = dict(ctime = last_order.ctime,
+                   mtime = last_order.mtime,
+                   restaurant = r_d,
+                   pos_slip_number = last_order.pos_slip_number,
+                   status = last_order.status)
 
+        # order_items
+        order_items = OrderItem.objects.filter(order=last_order)
+        l_l = []
+        for i in order_items:
+            m_d = dict(meal_name = i.meal.name,
+                       meal_price = i.meal.price,
+                       meal_id = i.meal.id)
+            l_l.append(dict(meal = m_d, amount = i.amount))
+
+        # combine, and output
         receipt = {}
-        receipt['last_order'] = jsonate(last_order)
-        receipt['order_items'] = l
+        receipt['last_order'] = l_d
+        receipt['order_items'] = l_l
 
         res.content = jsonate(receipt)
         res.status_code = 200

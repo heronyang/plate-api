@@ -243,13 +243,13 @@ class OrderTest(TestCase):
 
         d = json.loads(res.content)
 
-        lo = json.loads(d['last_order'])
+
+        lo = d['last_order']
         lo['ctime'] = None
         lo['mtime'] = None
-        self.assertEqual(lo, {"status": 0, "ctime": None, "restaurant": 1, "user_comment": "", "vendor_comment": "", "user": 1, "mtime": None, "pos_slip_number": 1, "id": 1})
-
+        self.assertEqual(lo, {"status": 0, "ctime": None, "restaurant": {u'location': 1, u'name': u'R0', u'rest_id': 1}, "mtime": None, "pos_slip_number": 1})
         oi = d['order_items']
-        self.assertEqual(oi, ['{"note": "", "amount": 2, "order": 1, "id": 1, "meal": 1}'])
+        self.assertEqual(oi, [{"amount": 2, "meal": {u'meal_id': 1, u'meal_name': u'M0', u'meal_price': 100}}])
 
     def test_multi_order_success(self):
         u0 = _User0.create(is_active=True)
@@ -265,13 +265,13 @@ class OrderTest(TestCase):
 
         d = json.loads(res.content)
 
-        lo = json.loads(d['last_order'])
+        lo = d['last_order']
         lo['ctime'] = None
         lo['mtime'] = None
-        self.assertEqual(lo, {"status": 0, "ctime": None, "restaurant": 1, "user_comment": "", "vendor_comment": "", "user": 1, "mtime": None, "pos_slip_number": 2, "id": 2})
 
+        self.assertEqual(lo, {"status": 0, "ctime": None, "restaurant": {u'location': 1, u'name': u'R0', u'rest_id': 1}, "mtime": None, "pos_slip_number": 2})
         oi = d['order_items']
-        self.assertEqual(oi, ['{"note": "", "amount": 2, "order": 2, "id": 2, "meal": 1}'])
+        self.assertEqual(oi, [{"amount": 2, "meal": {u'meal_id': 1, u'meal_name': u'M0', u'meal_price': 100}}])
 
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)
