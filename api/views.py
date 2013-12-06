@@ -126,6 +126,104 @@ def menu(request):
     res.content = jsonate(Meal.objects.filter(restaurant=restaurant_key))
     return res
 
+@csrf_exempt
+@require_POST
+@login_required
+def order_post(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    user = request.user
+
+    # create new order
+    # FIXME: should check 'can_place_order'
+
+    try:
+        order_json = request.POST['order']
+    except MultiValueDictKeyError:
+        res.content = "post error"
+        res.status_code = 400
+        return res
+
+    try:
+        order_data = json.loads(order_json)
+    except ValueError:
+        res.content = "json parsing error"
+        res.status_code = 400
+        return res
+
+    if not order_data:
+        res.content = "empty order"
+        res.status_code = 400
+        return res
+
+    # check if all meals are from the same restaurant
+    m = order_data[0]['meal_id']
+    rest = Meal.objects.get(pk=m).restaurant
+
+    for i in order_data[1:]:
+        m = i['meal_id']
+        if rest.id != Meal.objects.get(pk=m).restaurant.id:
+            res.content = "must be in the same restaurant"
+            res.status_code = 400
+            return res
+
+    # FIXME: does it make more sense to implement 'order_create' at Restuarant?
+    i = order_data[0]
+    (meal_key, amount) = (i['meal_id'], i['amount'])
+    (order, number_slip) = Meal.objects.get(pk=meal_key).order_create(user=user, amount=amount)
+
+    for i in order_data[1:]:
+        (meal_key, amount) = (i['meal_id'], i['amount'])
+        Meal.objects.get(pk=meal_key).order_add(amount=amount, order=order)
+
+    res.content = jsonate(dict(number_slip = number_slip))
+    res.status_code = 200
+    return res
+
+@csrf_exempt
+@require_GET
+@login_required
+def order_get(request):
+    # list eixsting order (only the latest one)
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+
+    user = request.user
+    orders = Order.objects.filter(user=user).order_by('-ctime')
+
+    if not orders:
+        res.content = "no processing order"
+        res.status_code = 204
+        return res
+
+    last_order = orders[:1][0]
+
+    # last_order
+    r_d = dict(name = last_order.restaurant.name,
+               location = last_order.restaurant.location,
+               rest_id = last_order.restaurant.id)
+    l_d = dict(ctime = last_order.ctime,
+               mtime = last_order.mtime,
+               restaurant = r_d,
+               pos_slip_number = last_order.pos_slip_number,
+               status = last_order.status)
+
+    # order_items
+    order_items = OrderItem.objects.filter(order=last_order)
+    l_l = []
+    for i in order_items:
+        m_d = dict(meal_name = i.meal.name,
+                   meal_price = i.meal.price,
+                   meal_id = i.meal.id)
+        l_l.append(dict(meal = m_d, amount = i.amount))
+
+    # combine, and output
+    receipt = {}
+    receipt['last_order'] = l_d
+    receipt['order_items'] = l_l
+
+    res.content = jsonate(receipt)
+    res.status_code = 200
+    return res
+
 class OrderView(django.views.generic.base.View):
 
     @method_decorator(csrf_exempt)

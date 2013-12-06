@@ -11,7 +11,9 @@ urlpatterns = patterns('',
     # app
     url(r'^1/restaurants$', views.restaurants, name='restaurants'),
     url(r'^1/menu$', views.menu, name='menu'),
-    url(r'^1/order$', views.OrderView.as_view(), name='order'),
+    #url(r'^1/order$', views.OrderView.as_view(), name='order'),
+    url(r'^1/order_get$', views.order_get, name='order_get'),
+    url(r'^1/order_post$', views.order_post, name='order_post'),
 
     # vendor
     url(r'^1/done$', views.done, name='done'),

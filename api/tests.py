@@ -114,12 +114,12 @@ class OrderTest(TestCase):
     # post
     def test_no_auth(self):
         self.client.logout()
-        res = self.client.post('/1/order')
+        res = self.client.post('/1/order_post')
         self.assertEqual(res.status_code, 302)
 
         u0 = _User0.create()
         r0 = _create_restaurant0();
-        res = self.client.post('/1/order', {'rest_id': r0.id})
+        res = self.client.post('/1/order_post', {'rest_id': r0.id})
         self.assertEqual(res.status_code, 302)
 
     def test_wrong_input0(self):
@@ -127,7 +127,7 @@ class OrderTest(TestCase):
         _login_through_api(self, _User0.username, _User0.password)
 
         r0 = _create_restaurant0();
-        res = self.client.post('/1/order', {'rest_id': r0.id})
+        res = self.client.post('/1/order_post', {'rest_id': r0.id})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_input1(self):
@@ -136,7 +136,7 @@ class OrderTest(TestCase):
 
         r0 = _create_restaurant0();
         m0 = _create_meal0()
-        res = self.client.post('/1/order', {'rest_id': r0.id,
+        res = self.client.post('/1/order_post', {'rest_id': r0.id,
             'order': json.dumps([{'meal_id': m0.id, 'amount': 2}]) + '???',
                 })
         self.assertEqual(res.status_code, 400)
@@ -147,7 +147,7 @@ class OrderTest(TestCase):
 
         r0 = _create_restaurant0();
         m0 = _create_meal0()
-        res = self.client.post('/1/order', {'rest_id': r0.id,
+        res = self.client.post('/1/order_post', {'rest_id': r0.id,
             'order': '',
                 })
         self.assertEqual(res.status_code, 400)
@@ -158,7 +158,7 @@ class OrderTest(TestCase):
 
         m0 = _create_meal0()
         m1 = _create_meal0()
-        res = self.client.post('/1/order', {'order': json.dumps([{'meal_id': m0.id, 'amount': 2}, {'meal_id': m1.id, 'amount': 3}]),
+        res = self.client.post('/1/order_post', {'order': json.dumps([{'meal_id': m0.id, 'amount': 2}, {'meal_id': m1.id, 'amount': 3}]),
                 })
         self.assertEqual(res.status_code, 400)
 
@@ -168,7 +168,7 @@ class OrderTest(TestCase):
 
         m0 = _create_meal0()
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
-        res = self.client.post('/1/order', {'order': jd})
+        res = self.client.post('/1/order_post', {'order': jd})
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.content, '{"number_slip": 1}')
@@ -188,7 +188,7 @@ class OrderTest(TestCase):
         m0 = _create_meal0()
         m1 = _create_meal0(create_new_restaurant=False)    #
 
-        res = self.client.post('/1/order', {'order': json.dumps([{'meal_id': m0.id, 'amount': 2}, {'meal_id': m1.id, 'amount': 3}]),
+        res = self.client.post('/1/order_post', {'order': json.dumps([{'meal_id': m0.id, 'amount': 2}, {'meal_id': m1.id, 'amount': 3}]),
                 })
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.content, '{"number_slip": 1}')
@@ -209,7 +209,7 @@ class OrderTest(TestCase):
         m0 = _create_meal0()
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
-        res = self.client.post('/1/order', {'order': jd})
+        res = self.client.post('/1/order_post', {'order': jd})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.content, '{"number_slip": 1}')
 
@@ -219,7 +219,7 @@ class OrderTest(TestCase):
         self.assertEqual(oi.amount, 2)
         # FIXME: should also check 'number_slip' is set or not
 
-        res = self.client.post('/1/order', {'order': jd})
+        res = self.client.post('/1/order_post', {'order': jd})
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.content, '{"number_slip": 2}')
 
@@ -228,7 +228,7 @@ class OrderTest(TestCase):
         u0 = _User0.create(is_active=True)
         _login_through_api(self, _User0.username, _User0.password)
 
-        res = self.client.get('/1/order')
+        res = self.client.get('/1/order_get')
         self.assertEqual(res.status_code, 204)
 
     def test_get_success(self):
@@ -237,9 +237,9 @@ class OrderTest(TestCase):
 
         m0 = _create_meal0()
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
-        self.client.post('/1/order', {'order': jd})
+        self.client.post('/1/order_get', {'order': jd})
 
-        res = self.client.get('/1/order')
+        res = self.client.get('/1/order_get')
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
@@ -258,10 +258,10 @@ class OrderTest(TestCase):
 
         m0 = _create_meal0()
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
-        self.client.post('/1/order', {'order': jd})
-        self.client.post('/1/order', {'order': jd})
+        self.client.post('/1/order_get', {'order': jd})
+        self.client.post('/1/order_get', {'order': jd})
 
-        res = self.client.get('/1/order')
+        res = self.client.get('/1/order_get')
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
