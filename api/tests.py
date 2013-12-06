@@ -171,10 +171,11 @@ class OrderTest(TestCase):
         res = self.client.post('/1/order', {'order': jd})
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content, "1")
+        self.assertEqual(res.content, '{"number_slip": 1}')
 
         o = Order.objects.get()
-        self.assertEqual(o.pos_slip_number, int(res.content))
+        res_d = json.loads(res.content)
+        self.assertEqual(o.pos_slip_number, res_d['number_slip'])
 
         oi = o.orderitem_set.get()
         self.assertEqual(oi.meal.id, m0.id)
@@ -190,7 +191,7 @@ class OrderTest(TestCase):
         res = self.client.post('/1/order', {'order': json.dumps([{'meal_id': m0.id, 'amount': 2}, {'meal_id': m1.id, 'amount': 3}]),
                 })
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content, "1")
+        self.assertEqual(res.content, '{"number_slip": 1}')
 
         o = Order.objects.get()
         oi0 = o.orderitem_set.get(pk=1)
@@ -210,7 +211,7 @@ class OrderTest(TestCase):
 
         res = self.client.post('/1/order', {'order': jd})
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content, "1")
+        self.assertEqual(res.content, '{"number_slip": 1}')
 
         o = Order.objects.get()
         oi = o.orderitem_set.get()
@@ -220,7 +221,7 @@ class OrderTest(TestCase):
 
         res = self.client.post('/1/order', {'order': jd})
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content, "2")
+        self.assertEqual(res.content, '{"number_slip": 2}')
 
     # get
     def test_get_success_empty(self):

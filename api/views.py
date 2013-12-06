@@ -176,7 +176,7 @@ class OrderView(django.views.generic.base.View):
             (meal_key, amount) = (i['meal_id'], i['amount'])
             Meal.objects.get(pk=meal_key).order_add(amount=amount, order=order)
 
-        res.content = number_slip
+        res.content = jsonate(dict(number_slip = number_slip))
         res.status_code = 200
         return res
 
