@@ -237,13 +237,12 @@ class OrderTest(TestCase):
 
         m0 = _create_meal0()
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
-        self.client.post('/1/order_get', {'order': jd})
+        self.client.post('/1/order_post', {'order': jd})
 
         res = self.client.get('/1/order_get')
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-
 
         lo = d['last_order']
         lo['ctime'] = None
@@ -258,8 +257,8 @@ class OrderTest(TestCase):
 
         m0 = _create_meal0()
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
-        self.client.post('/1/order_get', {'order': jd})
-        self.client.post('/1/order_get', {'order': jd})
+        self.client.post('/1/order_post', {'order': jd})
+        self.client.post('/1/order_post', {'order': jd})
 
         res = self.client.get('/1/order_get')
         self.assertEqual(res.status_code, 200)

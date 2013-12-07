@@ -23,6 +23,13 @@ MEALCATEGORY_NAME_MAX = 85
 COMMENT_MAX = 200
 PASSWORD_MAX = 50
 
+(ORDER_STATUS_INIT_COOKING,
+ ORDER_STATUS_FINISHED,
+ ORDER_STATUS_PICKED_UP,
+ ORDER_STATUS_REJECTED,
+ ORDER_STATUS_ABANDONED) = range(5)
+
+
 def is_valid_phone_number(phone_number):
     # only support cell phone number so far, like 0912123123
     if re.match(r'^09(\d{8})$', phone_number):
@@ -178,7 +185,7 @@ class Meal(models.Model):
 
         number_slip = self.restaurant.new_number_slip()
 
-        order = Order(user=user, restaurant=self.restaurant, pos_slip_number=number_slip)
+        order = Order(user=user, restaurant=self.restaurant, pos_slip_number=number_slip, status=ORDER_STATUS_INIT_COOKING)
         order.save()
         oi = OrderItem(meal=self, amount=amount, order=order, note=note)
         oi.save()

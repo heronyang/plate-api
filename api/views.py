@@ -6,7 +6,7 @@ import django.contrib.auth
 import django.core
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.datastructures import MultiValueDictKeyError
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 import django.views.generic.base
 from django.utils.decorators import method_decorator
@@ -19,6 +19,12 @@ from api.models import *
 
 CONTENT_TYPE_JSON = 'application/json'
 CONTENT_TYPE_TEXT = 'text/plain'
+
+def is_user(user):
+    return user.groups.filter(name='user')
+
+def is_vendor(vendor):
+    return vendor.groups.filter(name='vendor')
 
 @csrf_exempt
 @require_POST
@@ -129,6 +135,7 @@ def menu(request):
 @csrf_exempt
 @require_POST
 @login_required
+@user_passes_test(is_user)
 def order_post(request):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
     user = request.user
@@ -182,6 +189,7 @@ def order_post(request):
 @csrf_exempt
 @require_GET
 @login_required
+@user_passes_test(is_user)
 def order_get(request):
     # list eixsting order (only the latest one)
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
@@ -339,13 +347,20 @@ def restaurants(request):
 @csrf_exempt
 @require_POST
 @login_required
+@user_passes_test(is_vendor)
 def done(request):
     # turn meal state from COOKING to DONE
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
     assert(0)
 
 @csrf_exempt
 @require_POST
 @login_required
+@user_passes_test(is_vendor)
 def pick(request):
     # turn meal state from DONE to PICKED
     assert(0)
@@ -353,23 +368,33 @@ def pick(request):
 @csrf_exempt
 @require_POST
 @login_required
+@user_passes_test(is_vendor)
 def cancel(request):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
-    user = request.user
-    # FIXME: should check "ordered_by_user or is_order_vendor or is_superuser"
-    if not user.is_authenticated():
+    vendor = request.user
+
+    if not vendor.is_authenticated():
         res.status_code = 401
         return res
 
-    order_key = request.POST['number_slip_index']
-    # FIXME: mark orders as canceled, don't delete them
+    order_key = request.POST['order_key']
+
     try:
         o = Order.objects.get(pk=order_key)
     except Order.DoesNotExist:
         res.status_code = 404
-    else:
-        o.delete()
-        res.status_code = 200
+        return res
+
+    #
+    if o.status != ORDER_STATUS_INIT_COOKING:
+        res.status_code = 406   # Not Acceptable
+        return res
+
+    #FIXME: should check if the order is from this vendor
+
+    o.status = ORDER_STATUS_ABANDONED
+    o.save()
+    res.status_code = 200
     return res
 
 ###
