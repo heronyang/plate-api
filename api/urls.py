@@ -16,7 +16,8 @@ urlpatterns = patterns('',
     url(r'^1/order_post$', views.order_post, name='order_post'),
 
     # vendor
-    url(r'^1/done$', views.done, name='done'),
+    url(r'^1/order_vendor$', views.order_vendor, name='order_vendor'),
+    url(r'^1/finish$', views.finish, name='finish'),
     url(r'^1/pick$', views.pick, name='pick'),
     url(r'^1/cancel$', views.cancel, name='cancel'),
 

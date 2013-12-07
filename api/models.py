@@ -27,7 +27,8 @@ PASSWORD_MAX = 50
  ORDER_STATUS_FINISHED,
  ORDER_STATUS_PICKED_UP,
  ORDER_STATUS_REJECTED,
- ORDER_STATUS_ABANDONED) = range(5)
+ ORDER_STATUS_ABANDONED,
+ ORDER_STATUS_RESCUED) = range(6)
 
 
 def is_valid_phone_number(phone_number):
@@ -62,12 +63,52 @@ def db_init(unit_test_mode=True):
     c = Configuration(unit_test_mode=unit_test_mode)
     c.save()
 
+class Restaurant(models.Model):
+    name = models.CharField(max_length=RESTAURANT_NAME_MAX)
+    pic_url = models.URLField(blank=True)
+    location = models.IntegerField(default=0) # Enum like
+    status = models.IntegerField(default=0) # Enum like
+
+    # increase 1 when 1 order is added, no need to reset this field
+    number_slip = models.IntegerField(default=0)
+
+    # last number of the continous number slips
+    current_number_slip = models.IntegerField(default=0) # the last continous number slip
+    capacity = models.IntegerField(default=99)
+
+    def new_number_slip(self):
+        self.number_slip += 1
+        self.save()
+        return self.number_slip
+
+    # get the picture of the meal in HTML
+    def pic_tag(self):
+        if not self.pic_url:
+            # return "image not found" image
+            return u'<img width="200" src="%s" />' % Urls.EMPTY_PLATE_IMAGE_URL
+        return u'<img width="200" src="%s" />' % self.pic_url
+    pic_tag.short_description = "Restaurant Image"
+    pic_tag.allow_tags = True
+
+    # map the location to the real name
+    def location_name(self):
+        location_names = ["其他", "女二餐", "第二餐廳", "第一餐廳"]
+        if len(location_names) > self.location:
+            return location_names[self.location]
+        return location_names[0]
+
+    def __unicode__(self):
+        return self.name
+
 class Profile(models.Model):
     # additional info keyed on User
     user = models.OneToOneField(get_user_model())
     phone_number = models.CharField(max_length=20)
     pic_url = models.URLField(blank=True)
     ctime = models.DateTimeField(auto_now_add=True)
+
+    # for users in vendor group
+    restaurant = models.ForeignKey(Restaurant, null=True)
 
     @staticmethod
     def get_or_create(phone_number, role, add_registration=True):
@@ -114,43 +155,6 @@ class Profile(models.Model):
 
     def __unicode__(self):
         return self.phone_number
-
-class Restaurant(models.Model):
-    name = models.CharField(max_length=RESTAURANT_NAME_MAX)
-    pic_url = models.URLField(blank=True)
-    location = models.IntegerField(default=0) # Enum like
-    status = models.IntegerField(default=0) # Enum like
-
-    # increase 1 when 1 order is added, no need to reset this field
-    number_slip = models.IntegerField(default=0)
-
-    # last number of the continous number slips
-    current_number_slip = models.IntegerField(default=0) # the last continous number slip
-    capacity = models.IntegerField(default=99)
-
-    def new_number_slip(self):
-        self.number_slip += 1
-        self.save()
-        return self.number_slip
-
-    # get the picture of the meal in HTML
-    def pic_tag(self):
-        if not self.pic_url:
-            # return "image not found" image
-            return u'<img width="200" src="%s" />' % Urls.EMPTY_PLATE_IMAGE_URL
-        return u'<img width="200" src="%s" />' % self.pic_url
-    pic_tag.short_description = "Restaurant Image"
-    pic_tag.allow_tags = True
-
-    # map the location to the real name
-    def location_name(self):
-        location_names = ["其他", "女二餐", "第二餐廳", "第一餐廳"]
-        if len(location_names) > self.location:
-            return location_names[self.location]
-        return location_names[0]
-
-    def __unicode__(self):
-        return self.name
 
 class MealCategory(models.Model):
     name = models.CharField(max_length=MEALCATEGORY_NAME_MAX)
@@ -220,6 +224,33 @@ class Order(models.Model):
         for i in self.orderitem_set.all():
             i.delete()
         super(Order, self).delete()
+
+    def finish(self):
+        if self.status != ORDER_STATUS_INIT_COOKING:
+            return False
+        self.status = ORDER_STATUS_FINISHED
+        self.save()
+        return True
+
+    def pick(self):
+        if self.status == ORDER_STATUS_FINISHED:
+            self.status = ORDER_STATUS_PICKED_UP
+            self.save()
+            return True
+        if self.status == ORDER_STATUS_ABANDONED:
+            self.status = ORDER_STATUS_RESCUED
+            self.save()
+            return True
+        #
+        return False
+
+    def cancel(self):
+        if self.status != ORDER_STATUS_INIT_COOKING:
+            return False
+
+        self.status = ORDER_STATUS_REJECTED
+        self.save()
+        return True
 
 
 class OrderItem(models.Model):

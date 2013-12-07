@@ -10,10 +10,14 @@ class ProfileInline(admin.StackedInline):
 class MyUserAdmin(UserAdmin):
     # FIXME: show pic_url as avatar
     inlines = [ProfileInline]
-    list_display = ('username', 'phone_number', 'last_name', 'first_name', 'email', 'is_active')
+    list_display = ('username', 'phone_number', 'last_name', 'first_name', 'email', 'is_active', 'restaurant')
 
     def phone_number(self, user):
         return user.profile.phone_number
+
+    # vendor
+    def restaurant(self, user):
+        return user.profile.restaurant
 
 class RestaurantAdmin(admin.ModelAdmin):
     # FIXME: symbolic names for 'location'

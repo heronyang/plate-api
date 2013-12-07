@@ -348,22 +348,99 @@ def restaurants(request):
 @require_POST
 @login_required
 @user_passes_test(is_vendor)
-def done(request):
-    # turn meal state from COOKING to DONE
+def order_vendor(request):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
     vendor = request.user
+    restaurant = vendor.profile.restaurant
+
+    if not restaurant:
+        res.content = "the restaurant of this vendor is not set"
+        res.status_code = 404
+        return res
+
+    orders = Order.objects.filter(restaurant = restaurant)
+    r = []
+    for i in orders:
+        row = {}
+        row['order'] = i
+        row['order_items'] = OrderItem.objects.filter(order=i)
+        r.append(row)
+
+    res.status_code = 200
+    res.content = jsonate(r)
+    return res
+
+
+@csrf_exempt
+@require_POST
+@login_required
+@user_passes_test(is_vendor)
+def finish(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
     if not vendor.is_authenticated():
         res.status_code = 401
         return res
-    assert(0)
+
+    order_key = request.POST['order_key']
+
+    try:
+        o = Order.objects.get(pk=order_key)
+    except Order.DoesNotExist:
+        res.status_code = 404
+        return res
+
+    #
+    if o.restaurant != vendor.profile.restaurant:
+        res.content = "this is not your restaurant's order"
+        res.status_code = 401
+        return res
+
+    r = o.finish()
+    if not r:
+        res.content = "not able to cancel in this state"
+        res.status_code = 406   # Not Acceptable
+        return res
+
+    res.status_code = 200
+    return res
 
 @csrf_exempt
 @require_POST
 @login_required
 @user_passes_test(is_vendor)
 def pick(request):
-    # turn meal state from DONE to PICKED
-    assert(0)
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    order_key = request.POST['order_key']
+
+    try:
+        o = Order.objects.get(pk=order_key)
+    except Order.DoesNotExist:
+        res.status_code = 404
+        return res
+
+    #
+    if o.restaurant != vendor.profile.restaurant:
+        res.content = "this is not your restaurant's order"
+        res.status_code = 401
+        return res
+
+    # success
+    r = o.pick()
+    if not r:
+        res.content = "not able change to finish state from this state"
+        res.status_code = 406   # Not Acceptable
+        return res
+
+    res.status_code = 200
+    return res
 
 @csrf_exempt
 @require_POST
@@ -386,14 +463,17 @@ def cancel(request):
         return res
 
     #
-    if o.status != ORDER_STATUS_INIT_COOKING:
+    if o.restaurant != vendor.profile.restaurant:
+        res.content = "this is not your restaurant's order"
+        res.status_code = 401
+        return res
+
+    r = o.cancel()
+    if not r:
+        res.content = "not able to cancel in this state"
         res.status_code = 406   # Not Acceptable
         return res
 
-    #FIXME: should check if the order is from this vendor
-
-    o.status = ORDER_STATUS_ABANDONED
-    o.save()
     res.status_code = 200
     return res
 

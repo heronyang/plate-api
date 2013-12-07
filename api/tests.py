@@ -14,6 +14,17 @@ from django.utils import timezone
 import api.models
 from api.models import *
 
+(ORDER_STATUS_INIT_COOKING,
+ ORDER_STATUS_FINISHED,
+ ORDER_STATUS_PICKED_UP,
+ ORDER_STATUS_REJECTED,
+ ORDER_STATUS_ABANDONED,
+ ORDER_STATUS_RESCUED) = range(6)
+
+PHONE_NUMBER1 = '0911111111'
+PHONE_NUMBER2 = '0922222222'
+PHONE_NUMBER3 = '0933333333'
+
 class _User0(object):
     phone_number = '0912345678'
     username = phone_number
@@ -29,17 +40,56 @@ class _User0(object):
             user_group.save()
 
     @classmethod
-    def create(cls, is_active=None):
+    def create(cls, is_active=None, phone_number=None):
+
+        if phone_number != None:
+            cls.phone_number = phone_number
+
         cls.groups_create()
+
+        role = 'user'
         (p0, p0_created) = Profile.get_or_create(phone_number=cls.phone_number,
-                role='user', add_registration=False)
+                role=role, add_registration=False)
 
         u = p0.user
         if is_active:
             p0.add_user_registration(url_prefix='', raw_password=cls.password)
             ur = UserRegistration.objects.get(user=p0.user)
             ur.activate()
+
         return u
+
+class _Vendor0(object):
+    phone_number = '0987654321'
+    username = phone_number
+    password = 'u0pw1234'
+
+    @classmethod
+    def groups_create(cls):
+        (vendor_group, vendor_group_created) = Group.objects.get_or_create(name='vendor')
+        if vendor_group_created:
+            vendor_group.save()
+        (user_group, user_group_created) = Group.objects.get_or_create(name='user')
+        if user_group_created:
+            user_group.save()
+
+    @classmethod
+    def create(cls, restaurant=None):
+        cls.groups_create()
+
+        role = 'vendor'
+        (p0, p0_created) = Profile.get_or_create(phone_number=cls.phone_number,
+                role=role, add_registration=False)
+
+        v = p0.user
+        p0.add_user_registration(url_prefix='', raw_password=cls.password)
+        ur = UserRegistration.objects.get(user=p0.user)
+        ur.activate()
+
+        p0.restaurant = restaurant
+        p0.save()
+
+        return v
 
 def _login_through_api(testcase, username, password):
     return testcase.client.post('/1/login', {'username': username, 'password': password })
@@ -300,33 +350,267 @@ def _create_meal_recommendation():
     mr0.save()
     return mr0
 
-class CancelOrderTest(TestCase):
-    def test_order_delete(self):
-        o0 = _create_order0()
-        o0_id = o0.id
-        o0.delete()
-        self.assertFalse(OrderItem.objects.filter(order=o0_id))
-        self.assertFalse(Order.objects.filter(pk=o0_id))
+class VendorOrderTest(TestCase):
+    def test_order_vendor_restaurant_not_set(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
 
-    def test_order_delete_api(self):
-        o0 = _create_order0()
-        o0_id = o0.id
-        res = _login_through_api(self, _User0.username, _User0.password)
-        self.assertEqual(res.status_code, 200)
-        res = self.client.post('/1/cancel', {'number_slip_index': o0.id})
-        self.assertEqual(res.status_code, 200)
-        self.assertFalse(Order.objects.filter(pk=o0_id))
+        v0.profile.restaurant = None
+        v0.profile.save()
 
-    def test_order_delete_without_login(self):
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/order_vendor')
+        self.assertEqual(res.status_code, 404)
+
+    def test_order_vendor_empty(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/order_vendor')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(json.loads(res.content), [])
+
+
+    def test_order_vendor(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/order_vendor')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        for i in d:
+            i['order']['ctime'] = None
+            i['order']['mtime'] = None
+        self.assertEqual(d, [{"order": {"status": 0,
+                                        "ctime": None,
+                                        "restaurant": 1,
+                                        "user_comment": "",
+                                        "vendor_comment": "",
+                                        "user": 1,
+                                        "mtime": None,
+                                        "pos_slip_number": 1,
+                                        "id": 1},
+                              "order_items": [{"note": "",
+                                               "amount": 1,
+                                               "order": 1,
+                                               "id": 1,
+                                               "meal": 1}]
+                              }])
+
+    def test_order_vendor2(self):
+        u0 = _User0.create(is_active=True)
+        u1 = _User0.create(is_active=True, phone_number=PHONE_NUMBER1)
+
+        m0 = _create_meal0()
+        (o0, ns1) = m0.order_create(user=u0, amount=1)
+        (o1, ns2) = m0.order_create(user=u0, amount=2)
+
+        r0 = m0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/order_vendor')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        for i in d:
+            i['order']['ctime'] = None
+            i['order']['mtime'] = None
+        self.assertEqual(d, [{u'order':
+                                {u'status': 0,
+                                 u'ctime': None,
+                                 u'user_comment': u'',
+                                 u'restaurant': 1,
+                                 u'id': 1,
+                                 u'user': 1,
+                                 u'mtime': None,
+                                 u'vendor_comment': u'',
+                                 u'pos_slip_number': 1},
+                              u'order_items': [
+                                  {u'note': u'',
+                                   u'amount': 1,
+                                   u'meal': 1,
+                                   u'order': 1,
+                                   u'id': 1}]},
+                             {u'order':
+                                {u'status': 0,
+                                 u'ctime': None,
+                                 u'user_comment': u'',
+                                 u'restaurant': 1,
+                                 u'id': 2,
+                                 u'user': 1,
+                                 u'mtime': None,
+                                 u'vendor_comment': u'',
+                                 u'pos_slip_number': 2},
+                              u'order_items': [
+                                  {u'note': u'',
+                                   u'amount': 2,
+                                   u'meal': 1,
+                                   u'order': 2,
+                                   u'id': 2}]}])
+
+class PickOrderTest(TestCase):
+    def test_order_pick(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/finish', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/pick', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 200)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_PICKED_UP)
+
+    def test_order_pick_from_abondoned(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        o0.status = ORDER_STATUS_ABANDONED
+        o0.save()
+
+        res = self.client.post('/1/pick', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 200)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_RESCUED)
+
+    def test_order_pick_without_login(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/finish', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 200)
         self.client.logout()
-        o0 = _create_order0()
-        o0_id = o0.id
-        res = self.client.post('/1/cancel', {'number_slip_index': o0.id})
+        res = self.client.post('/1/pick', {'order_key': o0.id})
         self.assertEqual(res.status_code, 302)
-        res = _login_through_api(self, _User0.username, _User0.password)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_FINISHED)
+
+class FinishOrderTest(TestCase):
+    def test_order_finish(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
         self.assertEqual(res.status_code, 200)
-        res = self.client.post('/1/cancel', {'number_slip_index': o0.id})
+        res = self.client.post('/1/finish', {'order_key': o0.id})
         self.assertEqual(res.status_code, 200)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_FINISHED)
+
+    def test_order_finish_without_login(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = self.client.post('/1/finish', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 302)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_INIT_COOKING)
+
+    def test_order_finish_wrong_restaurant(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/finish', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 401)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_INIT_COOKING)
+
+class CancelOrderTest(TestCase):
+
+    def test_order_cancel(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/cancel', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 200)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_REJECTED)
+
+    def test_order_cancel_without_login(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = self.client.post('/1/cancel', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 302)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_INIT_COOKING)
+
+    def test_order_cancel_wrong_restaurant(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/cancel', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 401)
+
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_INIT_COOKING)
 
 class MenuTest(TestCase):
     def test_menu_get(self):
