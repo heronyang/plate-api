@@ -63,8 +63,10 @@ class MealRecommendationsAdmin(admin.ModelAdmin):
     list_filter = ['user']
 
 class UserRegistrationAdmin(admin.ModelAdmin):
-    inlines = [ProfileInline]
-    list_display = ('user', 'code', 'ctime', 'clicked')
+    list_display = ('username', 'code', 'ctime', 'clicked', 'password', 'password_type')
+
+    def username(self, user_registration):
+        return user_registration.user.username
 
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)

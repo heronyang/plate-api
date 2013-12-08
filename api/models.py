@@ -22,6 +22,7 @@ MEAL_NAME_MAX = 85
 MEALCATEGORY_NAME_MAX = 85
 COMMENT_MAX = 200
 PASSWORD_MAX = 600
+PASSWORD_TYPE_MAX = 30
 
 (ORDER_STATUS_INIT_COOKING,
  ORDER_STATUS_FINISHED,
@@ -38,9 +39,9 @@ def is_valid_phone_number(phone_number):
     return False
 
 def is_valid_password(password):
-    if re.match(r'^[A-Za-z0-9]{8,}$', password):
-        return True
-    return False
+    #if re.match(r'^[A-Za-z0-9]{8,}$', password):
+        #return True
+    return True
 
 # FIXME: https://docs.djangoproject.com/en/dev/ref/contrib/auth/
 # django.contrib.auth.User requires a alphanumeric 'username' field
@@ -134,7 +135,7 @@ class Profile(models.Model):
         profile.save()
         return (profile, True)
 
-    def add_user_registration(self, url_prefix, password=None, raw_password=None):
+    def add_user_registration(self, url_prefix, password=None, raw_password=None, password_type=None):
         if (password is None) and (raw_password is None):
             raise TypeError()
 
@@ -142,8 +143,11 @@ class Profile(models.Model):
             h = PBKDF2PasswordHasher()
             password = h.encode(raw_password, h.salt())
 
+        if password_type is None:
+            password_type = 'raw'
+
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
-        ur = UserRegistration(code=code, user=self.user, password=password, ctime=timezone.now())
+        ur = UserRegistration(code=code, user=self.user, password=password, ctime=timezone.now(), password_type=password_type)
         ur.save()
         # FIXME: generate URL
         url = url_prefix + reverse('activate') + '?code=' + code.hex
@@ -272,6 +276,7 @@ class UserRegistration(models.Model):
     code = UUIDField(auto=True)
     user = models.ForeignKey(get_user_model())
     password = models.CharField(max_length=PASSWORD_MAX)
+    password_type = models.CharField(max_length=PASSWORD_TYPE_MAX, blank=True)
     clicked = models.BooleanField(default=False)
     ctime = models.DateTimeField('time entered', auto_now=True)
 

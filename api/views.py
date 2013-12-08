@@ -67,7 +67,7 @@ def register(request):
     if wsgi_mount_point:
          url_prefix += wsgi_mount_point
 
-    m = profile.add_user_registration(url_prefix, password=password)
+    m = profile.add_user_registration(url_prefix, password=password, password_type=password_type)
     c = Configuration.get0()
     if not c.unit_test_mode:
         profile.__send_verification_message(m)
