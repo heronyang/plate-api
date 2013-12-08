@@ -50,6 +50,8 @@ def register(request):
     if password_type == 'raw':
         h = PBKDF2PasswordHasher()
         password = h.encode(password, h.salt())
+    elif password_type == 'registration_id':
+        password = password
     elif password_type == 'encoded':
         pass
         #FIXME: verify encoded_password is a 3 part hash
