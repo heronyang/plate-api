@@ -22,7 +22,7 @@ MEAL_NAME_MAX = 85
 MEALCATEGORY_NAME_MAX = 85
 COMMENT_MAX = 200
 PASSWORD_MAX = 600
-PASSWORD_TYPE_MAX = 30
+GCM_REGISTRATION_ID_MAX = 600
 
 (ORDER_STATUS_INIT_COOKING,
  ORDER_STATUS_FINISHED,
@@ -135,8 +135,11 @@ class Profile(models.Model):
         profile.save()
         return (profile, True)
 
-    def add_user_registration(self, url_prefix, password=None, raw_password=None, password_type=None):
+    def add_user_registration(self, url_prefix, gcm_registration_id, password=None, raw_password=None):
         if (password is None) and (raw_password is None):
+            raise TypeError()
+
+        if gcm_registration_id is None:
             raise TypeError()
 
         if password is None:
@@ -149,6 +152,12 @@ class Profile(models.Model):
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
         ur = UserRegistration(code=code, user=self.user, password=password, ctime=timezone.now(), password_type=password_type)
         ur.save()
+
+        # avoid duplication
+        if not GCMRegistrationId.objects.filter(gcm_registration_id=gcm_registration_id):
+            gr = GCMRegistrationId(user=self.user, gcm_registration_id=gcm_registration_id)
+            gr.save()
+
         # FIXME: generate URL
         url = url_prefix + reverse('activate') + '?code=' + code.hex
         message = '歡迎加入Plate點餐的行列，點選一下連結以啟動帳號！ ' + url
@@ -165,6 +174,13 @@ class MealCategory(models.Model):
 
     def __unicode__(self):
         return self.name
+
+class GCMRegistrationId(models.Model):
+    user = models.ForeignKey(get_user_model())
+    gcm_registration_id = models.CharField(max_length=GCM_REGISTRATION_ID_MAX)
+
+    def __unicode__(self):
+        return self.user.username
 
 class Meal(models.Model):
     name = models.CharField(max_length=MEAL_NAME_MAX)

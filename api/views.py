@@ -35,11 +35,12 @@ def register(request):
         phone_number = request.POST['phone_number']
         password = request.POST['password']
         password_type = request.POST['password_type']
+        gcm_registration_id = request.POST['gcm_registration_id']
     except MultiValueDictKeyError:
         res.status_code = 400
         return res
 
-    if not phone_number:
+    if (not phone_number) or (not gcm_registration_id):
         res.status_code = 400   # wrong input
         return res
 
@@ -67,7 +68,7 @@ def register(request):
     if wsgi_mount_point:
          url_prefix += wsgi_mount_point
 
-    m = profile.add_user_registration(url_prefix, password=password, password_type=password_type)
+    m = profile.add_user_registration(url_prefix, password=password, gcm_registration_id=gcm_registration_id)
     c = Configuration.get0()
     if not c.unit_test_mode:
         profile.__send_verification_message(m)
