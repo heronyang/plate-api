@@ -25,10 +25,14 @@ PHONE_NUMBER1 = '0911111111'
 PHONE_NUMBER2 = '0922222222'
 PHONE_NUMBER3 = '0933333333'
 
+GCM_REGISTRATION_ID0 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-1234567890'
+GCM_REGISTRATION_ID1 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-12345678900987654321'
+
 class _User0(object):
     phone_number = '0912345678'
     username = phone_number
     password = 'u0pw1234'
+    gcm_registration_id = GCM_REGISTRATION_ID0
 
     @classmethod
     def groups_create(cls):
@@ -53,7 +57,7 @@ class _User0(object):
 
         u = p0.user
         if is_active:
-            p0.add_user_registration(url_prefix='', raw_password=cls.password)
+            p0.add_user_registration(url_prefix='', raw_password=cls.password, gcm_registration_id=cls.gcm_registration_id)
             ur = UserRegistration.objects.get(user=p0.user)
             ur.activate()
 
@@ -82,7 +86,7 @@ class _Vendor0(object):
                 role=role, add_registration=False)
 
         v = p0.user
-        p0.add_user_registration(url_prefix='', raw_password=cls.password)
+        p0.add_user_registration(url_prefix='', raw_password=cls.password, gcm_registration_id=GCM_REGISTRATION_ID1)
         ur = UserRegistration.objects.get(user=p0.user)
         ur.activate()
 
@@ -111,25 +115,35 @@ class LoginTest(TestCase):
         self.assertEqual(res.status_code, 401)
 
 class RegisterTest(TestCase):
-    def test_bad_requests(self):
-        res = self.client.post('/1/register', {'phone_number': ''})
+    def test_bad_requests0(self):
+        res = self.client.post('/1/register', {'phone_number': '', 'gcm_registration_id': ''})
+        self.assertEqual(res.status_code, 400)
+
+    def test_bad_requests1(self):
+        res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
+            'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': ''})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format0(self):
-        res = self.client.post('/1/register', {'phone_number': '091112312',  'password_type': 'raw', 'password': '1'})
+        res = self.client.post('/1/register', {'phone_number': '091112312',  'password_type': 'raw', 'password': '1', 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format1(self):
-        res = self.client.post('/1/register', {'phone_number': '0911123123',  'password_type': 'raw', 'password': ''})
+        res = self.client.post('/1/register', {'phone_number': '0911123123',  'password_type': 'raw', 'password': '', 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 400)
 
     def test_success(self):
         api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
-            'password_type': 'raw', 'password': _User0.password})
+            'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 200)
         rs = UserRegistration.objects.filter(user__profile__phone_number=_User0.phone_number)
         assert(len(rs) == 1)
+
+        rs2 = GCMRegistrationId.objects.filter(gcm_registration_id=_User0.gcm_registration_id)
+        assert(len(rs2) == 1)
+        self.assertEqual(rs2[0].user.username, _User0.username)
+
 
     def test_generate_user_registration_message(self):
         pass
@@ -141,7 +155,7 @@ class ActivateTest(TestCase):
 
     def test_success(self):
         u0 = _User0.create()
-        m = u0.profile.add_user_registration(url_prefix='', raw_password=_User0.password)
+        m = u0.profile.add_user_registration(url_prefix='', raw_password=_User0.password, gcm_registration_id=_User0.gcm_registration_id)
         start = m.find('/1/activate')
         end = m.find('?code=', start)
         self.assertNotEqual(start, -1)

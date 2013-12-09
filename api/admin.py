@@ -63,8 +63,13 @@ class MealRecommendationsAdmin(admin.ModelAdmin):
     list_filter = ['user']
 
 class UserRegistrationAdmin(admin.ModelAdmin):
-    inlines = [ProfileInline]
-    list_display = ('user', 'code', 'ctime', 'clicked')
+    list_display = ('username', 'code', 'ctime', 'clicked')
+
+    def username(self, user_registration):
+        return user_registration.user.username
+
+class GCMRegistrationIdAdmin(admin.ModelAdmin):
+    list_display = ('user', 'gcm_registration_id')
 
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
@@ -74,3 +79,4 @@ admin.site.register(Order, OrderAdmin)
 admin.site.register(MealRecommendation, MealRecommendationsAdmin)
 admin.site.register(UserRegistration, UserRegistrationAdmin)
 admin.site.register(MealCategory)
+admin.site.register(GCMRegistrationId, GCMRegistrationIdAdmin)
