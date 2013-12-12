@@ -3,6 +3,8 @@
 import uuid
 import re
 import logging
+import json
+import urllib2
 
 from django.db import models
 from django.conf import settings
@@ -31,6 +33,32 @@ GCM_REGISTRATION_ID_MAX = 600
  ORDER_STATUS_ABANDONED,
  ORDER_STATUS_RESCUED) = range(6)
 
+def gcm_sender(gcm_registration_ids, title, message, ticker, collapse_key):
+
+    regids = []
+    for i in gcm_registration_ids:
+        regids.append(i.gcm_registration_id)
+
+    json_data = {"collapse_key" : collapse_key,
+                 "data" : {"title"   : title,
+                           "message" : message,
+                           "ticker"  : ticker, },
+                 "registration_ids": regids, }
+
+    url = 'https://android.googleapis.com/gcm/send'
+    apiKey = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
+    myKey = "key=" + apiKey
+    data = json.dumps(json_data)
+    headers = {'Content-Type': 'application/json', 'Authorization': myKey}
+    req = urllib2.Request(url, data, headers)
+    f = urllib2.urlopen(req)
+    response = json.loads(f.read())
+    reply = {}
+    if response ['failure'] == 0:
+        reply['error'] = '0'
+    else:
+        response ['error'] = '1'
+    return response
 
 def is_valid_phone_number(phone_number):
     # only support cell phone number so far, like 0912123123
@@ -134,6 +162,28 @@ class Profile(models.Model):
         profile = Profile(user=user, phone_number=phone_number)
         profile.save()
         return (profile, True)
+
+    def send_notification(self, caller, method):
+        collapse_key = ''
+        if caller is 'finish':
+            title = '餐點完成'
+            message = '您的餐點做好啦！'
+            ticker = message
+            collapse_key = 'order_finished'
+        else:
+            raise TypeError()
+
+        gcm_registration_ids = GCMRegistrationId.objects.filter(user=self.user)
+
+        if method is 'gcm':
+            gcm_sender(gcm_registration_ids=gcm_registration_ids,
+                       title=title,
+                       message=message,
+                       ticker=ticker,
+                       collapse_key=collapse_key)
+        else:
+            raise TypeError()
+
 
     def add_user_registration(self, url_prefix, gcm_registration_id, password=None, raw_password=None):
         if (password is None) and (raw_password is None):

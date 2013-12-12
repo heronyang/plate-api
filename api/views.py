@@ -404,6 +404,10 @@ def finish(request):
         res.status_code = 406   # Not Acceptable
         return res
 
+    # send notification to the user
+    p = o.user.profile
+    p.send_notification(caller='finish', method='gcm')
+
     res.status_code = 200
     return res
 
