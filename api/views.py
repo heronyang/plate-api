@@ -334,6 +334,23 @@ class OrderView(django.views.generic.base.View):
 
 @csrf_exempt
 @require_GET
+def current_ns(require):
+    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
+
+    try:
+        rest_id = require.GET['rest_id']
+    except MultiValueDictKeyError:
+        res.status_code = 400
+        return res
+
+    r = Restaurant.objects.get(pk=rest_id)
+
+    res.status_code = 200
+    res.content = jsonate({'current_ns': r.current_number_slip})
+    return res
+
+@csrf_exempt
+@require_GET
 def restaurants(request):
     res = HttpResponse(content_type=CONTENT_TYPE_JSON)
     try:
@@ -403,10 +420,6 @@ def finish(request):
         res.content = "not able to cancel in this state"
         res.status_code = 406   # Not Acceptable
         return res
-
-    # send notification to the user
-    p = o.user.profile
-    p.send_notification(caller='finish', method='gcm')
 
     res.status_code = 200
     return res

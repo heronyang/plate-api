@@ -126,6 +126,35 @@ class Restaurant(models.Model):
             return location_names[self.location]
         return location_names[0]
 
+    #
+    def update_current_number_slip(self, pos_slip_number):
+        new_ns = pos_slip_number
+
+        if (self.current_number_slip+1) == new_ns:
+            self.current_number_slip = new_ns
+            self.save()
+
+        os = Order.objects.filter(restaurant=self)
+
+        if not os:
+            raise TypeError
+
+        cur_ns = new_ns
+
+        # FIXME: poor code here (heron), inefficieny
+        while True:
+            updated = False
+            for i in os:
+                if i.status == ORDER_STATUS_INIT_COOKING:
+                    continue
+                if i.pos_slip_number == (cur_ns+1):
+                    cur_ns += 1
+                    self.current_number_slip = cur_ns
+                    self.save()
+                    updated = True
+            if not updated:
+                break
+
     def __unicode__(self):
         return self.name
 
@@ -297,6 +326,14 @@ class Order(models.Model):
             return False
         self.status = ORDER_STATUS_FINISHED
         self.save()
+
+        #
+        p = self.user.profile
+        p.send_notification(caller='finish', method='gcm')
+
+        # update restaurant current_number_slip
+        self.restaurant.update_current_number_slip(self.pos_slip_number)
+
         return True
 
     def pick(self):

@@ -548,6 +548,8 @@ class FinishOrderTest(TestCase):
         o = Order.objects.get(pk=o0.id)
         self.assertEqual(o.status, ORDER_STATUS_FINISHED)
 
+        self.assertEqual(o.restaurant.current_number_slip, 1)
+
     def test_order_finish_without_login(self):
         u0 = _User0.create(is_active=True)
         m0 = _create_meal0()
@@ -577,6 +579,61 @@ class FinishOrderTest(TestCase):
 
         o = Order.objects.get(pk=o0.id)
         self.assertEqual(o.status, ORDER_STATUS_INIT_COOKING)
+
+    def test_order_finish_current_number_slip_continous0(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+        (o1, ns) = m0.order_create(user=u0, amount=2)
+        (o2, ns) = m0.order_create(user=u0, amount=3)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        #
+        res = self.client.post('/1/finish', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 200)
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_FINISHED)
+        #
+        res = self.client.post('/1/finish', {'order_key': o2.id})
+        self.assertEqual(res.status_code, 200)
+        o = Order.objects.get(pk=o2.id)
+        self.assertEqual(o.status, ORDER_STATUS_FINISHED)
+
+        self.assertEqual(o.restaurant.current_number_slip, 1)
+
+    def test_order_finish_current_number_slip_continous1(self):
+        u0 = _User0.create(is_active=True)
+        m0 = _create_meal0()
+        (o0, ns) = m0.order_create(user=u0, amount=1)
+        (o1, ns) = m0.order_create(user=u0, amount=2)
+        (o2, ns) = m0.order_create(user=u0, amount=3)
+
+        r0 = o0.restaurant
+        v0 = _Vendor0.create(restaurant=r0)
+
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        #
+        res = self.client.post('/1/finish', {'order_key': o0.id})
+        self.assertEqual(res.status_code, 200)
+        o = Order.objects.get(pk=o0.id)
+        self.assertEqual(o.status, ORDER_STATUS_FINISHED)
+        #
+        res = self.client.post('/1/finish', {'order_key': o2.id})
+        self.assertEqual(res.status_code, 200)
+        o = Order.objects.get(pk=o2.id)
+        self.assertEqual(o.status, ORDER_STATUS_FINISHED)
+        #
+        res = self.client.post('/1/finish', {'order_key': o1.id})
+        self.assertEqual(res.status_code, 200)
+        o = Order.objects.get(pk=o1.id)
+        self.assertEqual(o.status, ORDER_STATUS_FINISHED)
+
+        self.assertEqual(o.restaurant.current_number_slip, 3)
 
 class CancelOrderTest(TestCase):
 
