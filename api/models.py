@@ -36,11 +36,6 @@ GCM_REGISTRATION_ID_MAX = 600
  ORDER_STATUS_RESCUED) = range(6)
 
 def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
-    # Pass 'proxies' keyword argument, as described in 'requests' library if you
-    # use proxies. Check other options too.
-    apiKey = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
-    gcm = GCM(apiKey)
-
     # Construct (key => scalar) payload. do not use nested structures.
     #data = {'str': 'string', 'int': 10}
     data = {"title":title, "message":message, "ticker":ticker, }
@@ -48,7 +43,7 @@ def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
     # Unicast or multicast message, read GCM manual about extra options.
     # It is probably a good idea to always use JSONMessage, even if you send
     # a notification to just 1 registration ID.
-    multicast = JSONMessage(gcm_registration_ids, data, collapse_key=collapse_key, dry_run=True)
+    multicast = JSONMessage(gcm_registration_ids, data, collapse_key=collapse_key, dry_run=False)
     tasks.gcm_send.delay(multicast)
 
 def is_valid_phone_number(phone_number):

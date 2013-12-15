@@ -1,16 +1,22 @@
 from __future__ import absolute_import
 
 import logging
+import traceback
 
 from celery import shared_task
+from api.models import *
 
 logger = logging.getLogger(__name__)
 
 @shared_task(bind=True)
 def gcm_send(self, msg, retry_count=0):
+    # Pass 'proxies' keyword argument, as described in 'requests' library if you
+    # use proxies. Check other options too.
+    apiKey = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
+    gcm = GCM(apiKey)
     try:
         # attempt send
-        res = gcm.send(multicast)
+        res = gcm.send(msg)
 
         # nothing to do on success
         for reg_id, msg_id in res.success.items():
@@ -50,9 +56,4 @@ def gcm_send(self, msg, retry_count=0):
         # your network is down or maybe proxy settings
         # are broken. when problem is resolved, you can
         # retry the whole message.
-        logger.error("GCM: Something wrong with requests library")
-
-@shared_task(bind=True)
-def test(self, retry_count=0):
-    self.apply_async((retry_count + 1,), countdown=1)
-    logger.info('test: %d' % (retry_count,))
+        logger.error('GCM: Exception: ' + traceback.format_exc())
