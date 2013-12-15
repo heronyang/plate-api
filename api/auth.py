@@ -19,8 +19,6 @@ class PerDevicePasswordAuthBackend(object):
         for ur in urs:
             if check_password(password, ur.password):
                 return ur.user
-            if ur.password_type == 'registration_id' and ur.password == password:
-                return ur.user
         return None
 
     def get_user(self, user_id):

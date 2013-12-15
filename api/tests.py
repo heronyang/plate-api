@@ -124,7 +124,6 @@ class RegisterTest(TestCase):
             'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': ''})
         self.assertEqual(res.status_code, 400)
 
-    """
     def test_wrong_format0(self):
         res = self.client.post('/1/register', {'phone_number': '091112312',  'password_type': 'raw', 'password': '1', 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 400)
@@ -132,7 +131,6 @@ class RegisterTest(TestCase):
     def test_wrong_format1(self):
         res = self.client.post('/1/register', {'phone_number': '0911123123',  'password_type': 'raw', 'password': '', 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 400)
-        """
 
     def test_success(self):
         api.models.db_init(unit_test_mode=True)
