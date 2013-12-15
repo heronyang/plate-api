@@ -3,6 +3,8 @@
 import uuid
 import re
 import logging
+import json
+import urllib2
 
 from django.db import models
 from django.conf import settings
@@ -31,6 +33,32 @@ GCM_REGISTRATION_ID_MAX = 600
  ORDER_STATUS_ABANDONED,
  ORDER_STATUS_RESCUED) = range(6)
 
+def gcm_sender(gcm_registration_ids, title, message, ticker, collapse_key):
+
+    regids = []
+    for i in gcm_registration_ids:
+        regids.append(i.gcm_registration_id)
+
+    json_data = {"collapse_key" : collapse_key,
+                 "data" : {"title"   : title,
+                           "message" : message,
+                           "ticker"  : ticker, },
+                 "registration_ids": regids, }
+
+    url = 'https://android.googleapis.com/gcm/send'
+    apiKey = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
+    myKey = "key=" + apiKey
+    data = json.dumps(json_data)
+    headers = {'Content-Type': 'application/json', 'Authorization': myKey}
+    req = urllib2.Request(url, data, headers)
+    f = urllib2.urlopen(req)
+    response = json.loads(f.read())
+    reply = {}
+    if response ['failure'] == 0:
+        reply['error'] = '0'
+    else:
+        response ['error'] = '1'
+    return response
 
 def is_valid_phone_number(phone_number):
     # only support cell phone number so far, like 0912123123
@@ -98,6 +126,35 @@ class Restaurant(models.Model):
             return location_names[self.location]
         return location_names[0]
 
+    #
+    def update_current_number_slip(self, pos_slip_number):
+        new_ns = pos_slip_number
+
+        if (self.current_number_slip+1) == new_ns:
+            self.current_number_slip = new_ns
+            self.save()
+
+        os = Order.objects.filter(restaurant=self)
+
+        if not os:
+            raise TypeError
+
+        cur_ns = new_ns
+
+        # FIXME: poor code here (heron), inefficieny
+        while True:
+            updated = False
+            for i in os:
+                if i.status == ORDER_STATUS_INIT_COOKING:
+                    continue
+                if i.pos_slip_number == (cur_ns+1):
+                    cur_ns += 1
+                    self.current_number_slip = cur_ns
+                    self.save()
+                    updated = True
+            if not updated:
+                break
+
     def __unicode__(self):
         return self.name
 
@@ -134,6 +191,28 @@ class Profile(models.Model):
         profile = Profile(user=user, phone_number=phone_number)
         profile.save()
         return (profile, True)
+
+    def send_notification(self, caller, method):
+        collapse_key = ''
+        if caller is 'finish':
+            title = '餐點完成'
+            message = '您的餐點做好啦！'
+            ticker = message
+            collapse_key = 'order_finished'
+        else:
+            raise TypeError()
+
+        gcm_registration_ids = GCMRegistrationId.objects.filter(user=self.user)
+
+        if method is 'gcm':
+            gcm_sender(gcm_registration_ids=gcm_registration_ids,
+                       title=title,
+                       message=message,
+                       ticker=ticker,
+                       collapse_key=collapse_key)
+        else:
+            raise TypeError()
+
 
     def add_user_registration(self, url_prefix, gcm_registration_id, password=None, raw_password=None):
         if (password is None) and (raw_password is None):
@@ -247,6 +326,14 @@ class Order(models.Model):
             return False
         self.status = ORDER_STATUS_FINISHED
         self.save()
+
+        #
+        p = self.user.profile
+        p.send_notification(caller='finish', method='gcm')
+
+        # update restaurant current_number_slip
+        self.restaurant.update_current_number_slip(self.pos_slip_number)
+
         return True
 
     def pick(self):
