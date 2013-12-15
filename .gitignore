@@ -9,4 +9,3 @@ media/*
 log/*
 local_settings.py
 plate.sqlite3
-api/migrations/
