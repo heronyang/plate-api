@@ -11,7 +11,6 @@ dbinit:
 .PHONY: pull
 pull:
 	git pull
-	./manage.py migrate --merge $(DJANGO_APPS)
 	for i in $(DJANGO_APPS); do \
 		./manage.py migrate --merge $$i; \
 	done
