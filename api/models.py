@@ -16,6 +16,8 @@ from const import Urls
 from django.core.urlresolvers import reverse
 from django.db.utils import IntegrityError
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
+from gcmclient import *
+import tasks
 
 logger = logging.getLogger(__name__)
 
@@ -33,32 +35,21 @@ GCM_REGISTRATION_ID_MAX = 600
  ORDER_STATUS_ABANDONED,
  ORDER_STATUS_RESCUED) = range(6)
 
-def gcm_sender(gcm_registration_ids, title, message, ticker, collapse_key):
-
-    regids = []
-    for i in gcm_registration_ids:
-        regids.append(i.gcm_registration_id)
-
-    json_data = {"collapse_key" : collapse_key,
-                 "data" : {"title"   : title,
-                           "message" : message,
-                           "ticker"  : ticker, },
-                 "registration_ids": regids, }
-
-    url = 'https://android.googleapis.com/gcm/send'
+def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
+    # Pass 'proxies' keyword argument, as described in 'requests' library if you
+    # use proxies. Check other options too.
     apiKey = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
-    myKey = "key=" + apiKey
-    data = json.dumps(json_data)
-    headers = {'Content-Type': 'application/json', 'Authorization': myKey}
-    req = urllib2.Request(url, data, headers)
-    f = urllib2.urlopen(req)
-    response = json.loads(f.read())
-    reply = {}
-    if response ['failure'] == 0:
-        reply['error'] = '0'
-    else:
-        response ['error'] = '1'
-    return response
+    gcm = GCM(apiKey)
+
+    # Construct (key => scalar) payload. do not use nested structures.
+    #data = {'str': 'string', 'int': 10}
+    data = {"title":title, "message":message, "ticker":ticker, }
+
+    # Unicast or multicast message, read GCM manual about extra options.
+    # It is probably a good idea to always use JSONMessage, even if you send
+    # a notification to just 1 registration ID.
+    multicast = JSONMessage(gcm_registration_ids, data, collapse_key=collapse_key, dry_run=True)
+    tasks.gcm_send.delay(multicast)
 
 def is_valid_phone_number(phone_number):
     # only support cell phone number so far, like 0912123123
@@ -205,11 +196,11 @@ class Profile(models.Model):
         gcm_registration_ids = GCMRegistrationId.objects.filter(user=self.user)
 
         if method is 'gcm':
-            gcm_sender(gcm_registration_ids=gcm_registration_ids,
-                       title=title,
-                       message=message,
-                       ticker=ticker,
-                       collapse_key=collapse_key)
+            gcm_send(gcm_registration_ids=gcm_registration_ids,
+                     title=title,
+                     message=message,
+                     ticker=ticker,
+                     collapse_key=collapse_key)
         else:
             raise TypeError()
 

@@ -1,6 +1,10 @@
+from __future__ import absolute_import
+
 # Django settings for plate_server project.
 import sys
 import os
+
+BROKER_URL = 'amqp://guest:guest@localhost//'
 
 PROJECT_DIR = os.path.dirname(__file__)
 
@@ -129,6 +133,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     'django.contrib.admindocs',
     'south',
+    'djcelery',
     'api',
 )
 
