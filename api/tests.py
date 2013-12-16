@@ -375,7 +375,7 @@ class VendorOrderTest(TestCase):
         res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
         self.assertEqual(res.status_code, 200)
         res = self.client.post('/1/order_vendor')
-        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.status_code, 400)
 
     def test_order_vendor_empty(self):
         r0 = _create_restaurant0()
@@ -414,11 +414,10 @@ class VendorOrderTest(TestCase):
                                         "mtime": None,
                                         "pos_slip_number": 1,
                                         "id": 1},
-                              "order_items": [{"note": "",
-                                               "amount": 1,
-                                               "order": 1,
-                                               "id": 1,
-                                               "meal": 1}]
+                                        "order_items": [{u'amount': 1,
+                                                         u'meal': {u'meal_name': u'M0',
+                                                                   u'meal_id': 1,
+                                                                   u'meal_price': 100}}]
                               }])
 
     def test_order_vendor2(self):
@@ -452,11 +451,10 @@ class VendorOrderTest(TestCase):
                                  u'vendor_comment': u'',
                                  u'pos_slip_number': 1},
                               u'order_items': [
-                                  {u'note': u'',
-                                   u'amount': 1,
-                                   u'meal': 1,
-                                   u'order': 1,
-                                   u'id': 1}]},
+                                  {u'amount': 1,
+                                   u'meal': {u'meal_name': u'M0',
+                                             u'meal_id': 1,
+                                             u'meal_price': 100}}]},
                              {u'order':
                                 {u'status': 0,
                                  u'ctime': None,
@@ -468,11 +466,11 @@ class VendorOrderTest(TestCase):
                                  u'vendor_comment': u'',
                                  u'pos_slip_number': 2},
                               u'order_items': [
-                                  {u'note': u'',
-                                   u'amount': 2,
-                                   u'meal': 1,
-                                   u'order': 2,
-                                   u'id': 2}]}])
+                                  {u'amount': 2,
+                                   u'meal': {u'meal_name': u'M0',
+                                             u'meal_id': 1,
+                                             u'meal_price': 100}},
+                                  ]}])
 
 class PickOrderTest(TestCase):
     def test_order_pick(self):

@@ -188,7 +188,11 @@ class Profile(models.Model):
         else:
             raise TypeError()
 
-        gcm_registration_ids = GCMRegistrationId.objects.filter(user=self.user)
+        #gcm_registration_ids = GCMRegistrationId.objects.filter(user=self.user)
+        gcm_registration_ids = []
+        gs = GCMRegistrationId.objects.filter(user=self.user)
+        for g in gs:
+            gcm_registration_ids.append(g.gcm_registration_id)
 
         if method is 'gcm':
             gcm_send(gcm_registration_ids=gcm_registration_ids,

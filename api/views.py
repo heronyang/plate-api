@@ -373,7 +373,7 @@ def order_vendor(request):
 
     if not restaurant:
         res.content = "the restaurant of this vendor is not set"
-        res.status_code = 404
+        res.status_code = 400
         return res
 
     orders = Order.objects.filter(restaurant = restaurant)
@@ -381,11 +381,31 @@ def order_vendor(request):
     for i in orders:
         row = {}
         row['order'] = i
-        row['order_items'] = OrderItem.objects.filter(order=i)
+
+        u = i.user
+        row['user'] = dict(username=u.username,
+                           first_name=u.first_name,
+                           last_name=u.last_name,
+                           email=u.email,
+                           id=u.id)
+
+
+        order_items = OrderItem.objects.filter(order=i)
+        oi_packed = []
+        for j in order_items:
+            oi = {}
+            m = j.meal
+            oi['meal'] = dict(meal_price=m.price,
+                              meal_name=m.name,
+                              meal_id=m.id)
+            oi['amount'] = j.amount
+            oi_packed.append(oi)
+
+        row['order_items'] = oi_packed
         r.append(row)
 
     res.status_code = 200
-    res.content = jsonate(r)
+    res.content = jsonate(dict(orders=r))
     return res
 
 
