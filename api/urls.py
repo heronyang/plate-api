@@ -21,6 +21,7 @@ urlpatterns = patterns('',
     url(r'^1/finish$', views.finish, name='finish'),
     url(r'^1/pick$', views.pick, name='pick'),
     url(r'^1/cancel$', views.cancel, name='cancel'),
+    url(r'^1/vendor_list$', views.vendor_list, name='vendor_list'),
 
     # not included in MVP
     url(r'^1/user-orders$', views.user_orders, name='user_orders'),

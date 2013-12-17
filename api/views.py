@@ -27,6 +27,22 @@ def is_vendor(vendor):
     return vendor.groups.filter(name='vendor')
 
 @csrf_exempt
+@require_GET
+def vendor_list(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
+
+    group = Group.objects.get(name='vendor')
+    users = group.user_set.all()
+
+    vendor_usernames = []
+    for i in users:
+        vendor_usernames.append(i.username)
+
+    res.status_code = 200
+    res.content = jsonate({'vendor_usernames':vendor_usernames})
+    return res
+
+@csrf_exempt
 @require_POST
 def register(request):
     #FIXME: add password type, if raw is using un-decode ones
