@@ -173,6 +173,13 @@ class ActivateTest(TestCase):
         u0 = User.objects.get(pk=u0.id)
         self.assertEqual(u0.is_active, True)
 
+class VendorListTest(TestCase):
+    def test_vendor_list_success(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+        res = self.client.get('/1/vendor_list')
+        self.assertEqual(json.loads(res.content), {"vendor_usernames": ["0987654321"]})
+
 class OrderTest(TestCase):
 
     # post
@@ -385,7 +392,7 @@ class VendorOrderTest(TestCase):
         self.assertEqual(res.status_code, 200)
         res = self.client.post('/1/order_vendor')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(json.loads(res.content), [])
+        self.assertEqual(json.loads(res.content), {'orders':[]})
 
 
     def test_order_vendor(self):
@@ -402,23 +409,30 @@ class VendorOrderTest(TestCase):
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        for i in d:
+        for i in d['orders']:
             i['order']['ctime'] = None
             i['order']['mtime'] = None
-        self.assertEqual(d, [{"order": {"status": 0,
-                                        "ctime": None,
-                                        "restaurant": 1,
-                                        "user_comment": "",
-                                        "vendor_comment": "",
-                                        "user": 1,
-                                        "mtime": None,
-                                        "pos_slip_number": 1,
-                                        "id": 1},
-                                        "order_items": [{u'amount': 1,
-                                                         u'meal': {u'meal_name': u'M0',
-                                                                   u'meal_id': 1,
-                                                                   u'meal_price': 100}}]
-                              }])
+        self.assertEqual(d, {u'orders':
+                                    [{u'order':
+                                        {u'status': 0,
+                                         u'ctime': None,
+                                         u'user_comment': u'',
+                                         u'restaurant': 1,
+                                         u'id': 1,
+                                         u'user': 1,
+                                         u'mtime': None,
+                                         u'vendor_comment': u'',
+                                         u'pos_slip_number': 1},
+                                      u'order_items':
+                                        [{u'amount': 1,
+                                          u'meal': {u'meal_name': u'M0',
+                                                    u'meal_id': 1,
+                                                    u'meal_price': 100}}],
+                                          u'user': {u'username': u'0912345678',
+                                                    u'first_name': u'',
+                                                    u'last_name': u'',
+                                                    u'id': 1,
+                                                    u'email': u''}}]})
 
     def test_order_vendor2(self):
         u0 = _User0.create(is_active=True)
@@ -437,40 +451,51 @@ class VendorOrderTest(TestCase):
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        for i in d:
+        for i in d['orders']:
             i['order']['ctime'] = None
             i['order']['mtime'] = None
-        self.assertEqual(d, [{u'order':
-                                {u'status': 0,
-                                 u'ctime': None,
-                                 u'user_comment': u'',
-                                 u'restaurant': 1,
-                                 u'id': 1,
-                                 u'user': 1,
-                                 u'mtime': None,
-                                 u'vendor_comment': u'',
-                                 u'pos_slip_number': 1},
-                              u'order_items': [
-                                  {u'amount': 1,
-                                   u'meal': {u'meal_name': u'M0',
-                                             u'meal_id': 1,
-                                             u'meal_price': 100}}]},
-                             {u'order':
-                                {u'status': 0,
-                                 u'ctime': None,
-                                 u'user_comment': u'',
-                                 u'restaurant': 1,
-                                 u'id': 2,
-                                 u'user': 1,
-                                 u'mtime': None,
-                                 u'vendor_comment': u'',
-                                 u'pos_slip_number': 2},
-                              u'order_items': [
-                                  {u'amount': 2,
-                                   u'meal': {u'meal_name': u'M0',
-                                             u'meal_id': 1,
-                                             u'meal_price': 100}},
-                                  ]}])
+        self.assertEqual(d, {u'orders':
+                                    [{u'order':
+                                        {u'status': 0,
+                                         u'ctime': None,
+                                         u'user_comment': u'',
+                                         u'restaurant': 1,
+                                         u'id': 1,
+                                         u'user': 1,
+                                         u'mtime': None,
+                                         u'vendor_comment': u'',
+                                         u'pos_slip_number': 1},
+                                      u'order_items':
+                                        [{u'amount': 1,
+                                          u'meal': {u'meal_name': u'M0',
+                                                    u'meal_id': 1,
+                                                    u'meal_price': 100}}],
+                                          u'user': {u'username': u'0912345678',
+                                                    u'first_name': u'',
+                                                    u'last_name': u'',
+                                                    u'id': 1,
+                                                    u'email': u''}},
+                                     {u'order':
+                                        {u'status': 0,
+                                         u'ctime': None,
+                                         u'user_comment': u'',
+                                         u'restaurant': 1,
+                                         u'id': 1,
+                                         u'user': 1,
+                                         u'mtime': None,
+                                         u'vendor_comment': u'',
+                                         u'pos_slip_number': 2},
+                                      u'order_items':
+                                        [{u'amount': 1,
+                                          u'meal': {u'meal_name': u'M0',
+                                                    u'meal_id': 1,
+                                                    u'meal_price': 100}}],
+                                          u'user': {u'username': u'0912345678',
+                                                    u'first_name': u'',
+                                                    u'last_name': u'',
+                                                    u'id': 1,
+                                                    u'email': u''}}]
+                                          })
 
 class PickOrderTest(TestCase):
     def test_order_pick(self):

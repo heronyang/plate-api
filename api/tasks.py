@@ -4,7 +4,7 @@ import logging
 import traceback
 
 from celery import shared_task
-from api.models import *
+from .models import *
 
 logger = logging.getLogger(__name__)
 
@@ -57,3 +57,10 @@ def gcm_send(self, msg, retry_count=0):
         # are broken. when problem is resolved, you can
         # retry the whole message.
         logger.error('GCM: Exception: ' + traceback.format_exc())
+
+@shared_task()
+def abandon(order_id):
+    o = Order.objects.get(pk=order_id)
+    if o.status == ORDER_STATUS_FINISHED:
+        o.status = ORDER_STATUS_ABANDONED
+        o.save()

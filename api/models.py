@@ -21,6 +21,8 @@ import tasks
 
 logger = logging.getLogger(__name__)
 
+TIMEOUT_FOR_ADANDONED = (10 * 60)   # sec
+
 RESTAURANT_NAME_MAX = 33
 MEAL_NAME_MAX = 85
 MEALCATEGORY_NAME_MAX = 85
@@ -320,6 +322,10 @@ class Order(models.Model):
         #
         p = self.user.profile
         p.send_notification(caller='finish', method='gcm')
+
+        # turn the order to abandon in (TIMEOUT_FOR_ADANDONED) seconds
+        # if the user does not 'pick' during this period
+        tasks.abandon.apply_async((self.id,), countdown=TIMEOUT_FOR_ADANDONED)
 
         # update restaurant current_number_slip
         self.restaurant.update_current_number_slip(self.pos_slip_number)
