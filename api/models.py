@@ -187,6 +187,11 @@ class Profile(models.Model):
             message = '您的餐點做好啦！'
             ticker = message
             collapse_key = 'order_finished'
+        elif caller is 'cancel':
+            title = '點餐失敗'
+            message = '抱歉老闆因故無法完成訂單！'
+            ticker = message
+            collapse_key = 'order_canceled'
         else:
             raise TypeError()
 
@@ -350,6 +355,11 @@ class Order(models.Model):
 
         self.status = ORDER_STATUS_REJECTED
         self.save()
+
+        #
+        p = self.user.profile
+        p.send_notification(caller='cancel', method='gcm')
+
         return True
 
 
