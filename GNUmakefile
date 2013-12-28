@@ -1,12 +1,16 @@
 DJANGO_APPS=api djcelery
 
+export DJANGO_SETTINGS_MODULE:=plate_server.settings
+export PYTHONPATH:=$(PWD):$(PYTHONPATH)
+
 .PHONY: dbinit
 dbinit:
+	./bin/django-db-create
 	./manage.py syncdb --noinput
 	for i in $(DJANGO_APPS); do \
 		./manage.py migrate $$i; \
 	done
-	./manage.py loaddata plate-test.json
+	#./manage.py loaddata plate-test.json
 
 .PHONY: pull
 pull:
@@ -28,3 +32,11 @@ dbschemachange:
 		./manage.py migrate $$i; \
 	done
 	./manage.py dumpdata --indent=3 api > plate-test.json
+
+.PHONY: dbdestroy
+dbdestroy:
+	./bin/django-db-destroy
+
+.PHONY: shell
+shell:
+	bash

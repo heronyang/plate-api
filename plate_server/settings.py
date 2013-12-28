@@ -172,6 +172,12 @@ AUTHENTICATION_BACKENDS = (
 )
 
 try:
-    from local_settings import *
-except ImportError, e:
+    from . import local_settings
+except ImportError:
     pass
+else:
+    l = locals()
+    for k in dir(local_settings):
+        if k.startswith('__'):
+            continue
+        l[k] = getattr(local_settings, k)
