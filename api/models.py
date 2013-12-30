@@ -21,7 +21,7 @@ import tasks
 
 logger = logging.getLogger(__name__)
 
-TIMEOUT_FOR_ADANDONED = (10 * 60)   # sec
+TIMEOUT_FOR_ADANDONED = (15 * 60)   # sec
 
 RESTAURANT_NAME_MAX = 33
 MEAL_NAME_MAX = 85
@@ -39,7 +39,6 @@ GCM_REGISTRATION_ID_MAX = 600
 
 def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
     # Construct (key => scalar) payload. do not use nested structures.
-    #data = {'str': 'string', 'int': 10}
     data = {"title":title, "message":message, "ticker":ticker, }
 
     # Unicast or multicast message, read GCM manual about extra options.
@@ -116,20 +115,14 @@ class Restaurant(models.Model):
 
     #
     def update_current_number_slip(self, pos_slip_number):
-        new_ns = pos_slip_number
-
-        if (self.current_number_slip+1) == new_ns:
-            self.current_number_slip = new_ns
-            self.save()
 
         os = Order.objects.filter(restaurant=self)
-
         if not os:
-            raise TypeError
+            return
 
-        cur_ns = new_ns
+        cur_ns = self.current_number_slip
 
-        # FIXME: poor code here (heron), inefficieny
+        # FIXME: use Order.objects.filter(restaurant=self && pos_slip_number=(cur_ns+1)) instead
         while True:
             updated = False
             for i in os:
@@ -329,7 +322,7 @@ class Order(models.Model):
         p.send_notification(caller='finish', method='gcm')
 
         # turn the order to abandon in (TIMEOUT_FOR_ADANDONED) seconds
-        # if the user does not 'pick' during this period
+        # if the user does not 'pickup' during this period
         tasks.abandon.apply_async((self.id,), countdown=TIMEOUT_FOR_ADANDONED)
 
         # update restaurant current_number_slip
@@ -337,7 +330,7 @@ class Order(models.Model):
 
         return True
 
-    def pick(self):
+    def pickup(self):
         if self.status == ORDER_STATUS_FINISHED:
             self.status = ORDER_STATUS_PICKED_UP
             self.save()

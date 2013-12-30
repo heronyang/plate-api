@@ -19,7 +19,7 @@ urlpatterns = patterns('',
     # vendor
     url(r'^1/order_vendor$', views.order_vendor, name='order_vendor'),
     url(r'^1/finish$', views.finish, name='finish'),
-    url(r'^1/pick$', views.pick, name='pick'),
+    url(r'^1/pickup$', views.pickup, name='pickup'),
     url(r'^1/cancel$', views.cancel, name='cancel'),
     url(r'^1/vendor_list$', views.vendor_list, name='vendor_list'),
 

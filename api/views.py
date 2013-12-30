@@ -464,7 +464,7 @@ def finish(request):
 @require_POST
 @login_required
 @user_passes_test(is_vendor)
-def pick(request):
+def pickup(request):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
     vendor = request.user
 
@@ -487,7 +487,7 @@ def pick(request):
         return res
 
     # success
-    r = o.pick()
+    r = o.pickup()
     if not r:
         res.content = "not able change to finish state from this state"
         res.status_code = 406   # Not Acceptable
