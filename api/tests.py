@@ -843,6 +843,52 @@ class RestaurantsTest(TestCase):
         d = json.loads(res.content)
         self.assertEqual(d, [{u'capacity': 99, u'current_number_slip': 0, u'id': 1, u'location': 1, u'name': u'R0', u'number_slip': 0, u'pic_url': u'', u'status': 0}])
 
+class CurrentCookingOrdersTest(TestCase):
+    def test_current_cooking_orders_empty(self):
+        r0 = _create_restaurant0()
+
+        # test model function
+        n = r0.current_cooking_orders()
+        self.assertEqual(n, 0)
+
+        # test api
+        res = self.client.get('/1/current_cooking_orders', {'rest_id': r0.id})
+        ns = json.loads(res.content)['current_cooking_orders']
+        self.assertEqual(ns, 0)
+
+    def test_current_cooking_orders_one_user(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, '{"number_slip": 1}')
+
+        r = m0.restaurant
+        n = r.current_cooking_orders()
+        self.assertEqual(n, 1)
+
+        res = self.client.get('/1/current_cooking_orders', {'rest_id': r.id})
+        ns = json.loads(res.content)['current_cooking_orders']
+        self.assertEqual(ns, 1)
+
+        # finish
+        o = Order.objects.get()
+        r = o.finish()
+        self.assertEqual(r, True)
+
+        #
+        r = m0.restaurant
+        n = r.current_cooking_orders()
+        self.assertEqual(n, 0)
+
+        res = self.client.get('/1/current_cooking_orders', {'rest_id': r.id})
+        ns = json.loads(res.content)['current_cooking_orders']
+        self.assertEqual(ns, 0)
+
 class OldAPITest(TestCase):
     def test_old_suggestions(self):
         self.client.logout()

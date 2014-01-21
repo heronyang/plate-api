@@ -388,6 +388,24 @@ def current_ns(require):
 
 @csrf_exempt
 @require_GET
+def current_cooking_orders(require):
+    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
+
+    try:
+        rest_id = require.GET['rest_id']
+    except MultiValueDictKeyError:
+        res.status_code = 400
+        return res
+
+    r = Restaurant.objects.get(pk=rest_id)
+    n = r.current_cooking_orders()
+
+    res.status_code = 200
+    res.content = jsonate({'current_cooking_orders': n})
+    return res
+
+@csrf_exempt
+@require_GET
 def restaurants(request):
     res = HttpResponse(content_type=CONTENT_TYPE_JSON)
     try:

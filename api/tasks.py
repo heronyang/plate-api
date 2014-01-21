@@ -64,3 +64,18 @@ def abandon(order_id):
     if o.status == ORDER_STATUS_FINISHED:
         o.status = ORDER_STATUS_ABANDONED
         o.save()
+
+@shared_task()
+def remove_incomplete_order():
+    os = Order.objects.all()
+    for i in os:
+        if i.status == ORDER_STATUS_FINISHED:
+            i.status = ORDER_STATUS_ABANDONED
+            i.save()
+
+            u = i.user
+            u.failure = u.failure+1
+            u.save()
+        if i.status == ORDER_STATUS_INIT_COOKING:
+            i.status = ORDER_STATUS_DROPPED
+            i.save()

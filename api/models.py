@@ -30,13 +30,23 @@ COMMENT_MAX = 200
 PASSWORD_MAX = 128
 GCM_REGISTRATION_ID_MAX = 600
 
+(RESTAURANT_STATUS_CLOSE,
+ RESTAURANT_STATUS_OPEN,
+ RESTAURANT_STATUS_BUSY,
+ RESTAURANT_STATUS_UNLISTED
+ ) = range(4)
+
 (ORDER_STATUS_INIT_COOKING, # order-incomplete
  ORDER_STATUS_FINISHED,     # order-incomplete
  ORDER_STATUS_PICKED_UP,    # order-complete
  ORDER_STATUS_REJECTED,     # order-complete
  ORDER_STATUS_ABANDONED,    # order-complete
- ORDER_STATUS_RESCUED       # order-complete
- ) = range(6)
+ ORDER_STATUS_RESCUED,      # order-complete
+ ORDER_STATUS_DROPPED       # order-complete
+ ) = range(7)
+
+def remove_incomplete_order():
+    tasks.remove_incomplete_order.apply_async()
 
 def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
     # Construct (key => scalar) payload. do not use nested structures.
@@ -137,6 +147,14 @@ class Restaurant(models.Model):
             if not updated:
                 break
 
+    def current_cooking_orders(self):
+        os = Order.objects.filter(restaurant=self)
+        n = 0
+        for i in os:
+            if i.status == ORDER_STATUS_INIT_COOKING:
+                n += 1
+        return n
+
     def __unicode__(self):
         return self.name
 
@@ -147,6 +165,7 @@ class Profile(models.Model):
     pic_url = models.URLField(blank=True)
     ctime = models.DateTimeField(auto_now_add=True)
 
+    failure = models.IntegerField(default=0)
     # for users in vendor group
     restaurant = models.ForeignKey(Restaurant, null=True)
 
@@ -363,7 +382,6 @@ class Order(models.Model):
         p.send_notification(caller='cancel', method='gcm')
 
         return True
-
 
 class OrderItem(models.Model):
     # NOTE: expect changes for business requirements
