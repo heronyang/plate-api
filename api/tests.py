@@ -233,6 +233,16 @@ class OrderTest(TestCase):
                 })
         self.assertEqual(res.status_code, 400)
 
+    def test_exceed_max_total_price(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 6}] )
+        res = self.client.post('/1/order_post', {'order': jd})
+
+        self.assertEqual(res.status_code, 460)
+
     def test_success(self):
         u0 = _User0.create(is_active=True)
         _login_through_api(self, _User0.username, _User0.password)
@@ -273,7 +283,80 @@ class OrderTest(TestCase):
         self.assertEqual(oi1.meal.id, m1.id)
         self.assertEqual(oi1.amount, 3)
 
-    def test_mutli_orders_success(self):
+    def test_mutli_orders_success0(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, '{"number_slip": 1}')
+
+        o = Order.objects.get()
+        oi = o.orderitem_set.get()
+        self.assertEqual(oi.meal.id, m0.id)
+        self.assertEqual(oi.amount, 2)
+        # FIXME: should also check 'number_slip' is set or not
+
+        # rest finish cooking, then press pick
+        r = o.finish()
+        self.assertEqual(r, True)
+        r = o.pickup()
+        self.assertEqual(r, True)
+
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, '{"number_slip": 2}')
+
+    def test_multi_orders_success1(self):
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0()
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 200)
+
+        # rest pickup
+        res = self.client.get('/1/order_get')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+
+        lo = d['last_order']
+        lo['ctime'] = None
+        lo['mtime'] = None
+
+        self.assertEqual(lo, {"status": 0, "ctime": None, "restaurant": {u'location': 1, u'name': u'R0', u'rest_id': 1}, "mtime": None, "pos_slip_number": 1})
+        oi = d['order_items']
+        self.assertEqual(oi, [{"amount": 2, "meal": {u'meal_id': 1, u'meal_name': u'M0', u'meal_price': 60}}])
+        pos_slip_number = lo['pos_slip_number']
+        o = Order.objects.get(pk=pos_slip_number)   # it's the same when only one rest
+        r = o.finish()
+        self.assertEqual(r, True)
+        r = o.pickup()
+        self.assertEqual(r, True)
+
+        #
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 200)
+
+        res = self.client.get('/1/order_get')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+
+        lo = d['last_order']
+        lo['ctime'] = None
+        lo['mtime'] = None
+
+        self.assertEqual(lo, {"status": 0, "ctime": None, "restaurant": {u'location': 1, u'name': u'R0', u'rest_id': 1}, "mtime": None, "pos_slip_number": 2})
+        oi = d['order_items']
+        self.assertEqual(oi, [{"amount": 2, "meal": {u'meal_id': 1, u'meal_name': u'M0', u'meal_price': 60}}])
+
+    def test_mutli_orders_fail_incomplete_order(self):
         u0 = _User0.create(is_active=True)
         _login_through_api(self, _User0.username, _User0.password)
 
@@ -291,8 +374,7 @@ class OrderTest(TestCase):
         # FIXME: should also check 'number_slip' is set or not
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content, '{"number_slip": 2}')
+        self.assertEqual(res.status_code, 461)
 
     # get
     def test_get_success_empty(self):
@@ -320,29 +402,7 @@ class OrderTest(TestCase):
         lo['mtime'] = None
         self.assertEqual(lo, {"status": 0, "ctime": None, "restaurant": {u'location': 1, u'name': u'R0', u'rest_id': 1}, "mtime": None, "pos_slip_number": 1})
         oi = d['order_items']
-        self.assertEqual(oi, [{"amount": 2, "meal": {u'meal_id': 1, u'meal_name': u'M0', u'meal_price': 100}}])
-
-    def test_multi_order_success(self):
-        u0 = _User0.create(is_active=True)
-        _login_through_api(self, _User0.username, _User0.password)
-
-        m0 = _create_meal0()
-        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
-        self.client.post('/1/order_post', {'order': jd})
-        self.client.post('/1/order_post', {'order': jd})
-
-        res = self.client.get('/1/order_get')
-        self.assertEqual(res.status_code, 200)
-
-        d = json.loads(res.content)
-
-        lo = d['last_order']
-        lo['ctime'] = None
-        lo['mtime'] = None
-
-        self.assertEqual(lo, {"status": 0, "ctime": None, "restaurant": {u'location': 1, u'name': u'R0', u'rest_id': 1}, "mtime": None, "pos_slip_number": 2})
-        oi = d['order_items']
-        self.assertEqual(oi, [{"amount": 2, "meal": {u'meal_id': 1, u'meal_name': u'M0', u'meal_price': 100}}])
+        self.assertEqual(oi, [{"amount": 2, "meal": {u'meal_id': 1, u'meal_name': u'M0', u'meal_price': 60}}])
 
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)
@@ -354,7 +414,7 @@ def _create_meal0(create_new_restaurant=True):
         r0 = _create_restaurant0()
     else:
         r0 = Restaurant.objects.get()
-    m0 = Meal(name='M0', price=100, restaurant=r0)
+    m0 = Meal(name='M0', price=60, restaurant=r0)
     m0.save()
     return m0
 
@@ -427,7 +487,7 @@ class VendorOrderTest(TestCase):
                                         [{u'amount': 1,
                                           u'meal': {u'meal_name': u'M0',
                                                     u'meal_id': 1,
-                                                    u'meal_price': 100}}],
+                                                    u'meal_price': 60}}],
                                           u'user': {u'username': u'0912345678',
                                                     u'first_name': u'',
                                                     u'last_name': u'',
@@ -470,7 +530,7 @@ class VendorOrderTest(TestCase):
                                         [{u'amount': 1,
                                           u'meal': {u'meal_name': u'M0',
                                                     u'meal_id': 1,
-                                                    u'meal_price': 100}}],
+                                                    u'meal_price': 60}}],
                                           u'user': {u'username': u'0912345678',
                                                     u'first_name': u'',
                                                     u'last_name': u'',
@@ -490,7 +550,7 @@ class VendorOrderTest(TestCase):
                                         [{u'amount': 2,
                                           u'meal': {u'meal_name': u'M0',
                                                     u'meal_id': 1,
-                                                    u'meal_price': 100}}],
+                                                    u'meal_price': 60}}],
                                           u'user': {u'username': u'0911111111',
                                                     u'first_name': u'',
                                                     u'last_name': u'',
@@ -769,7 +829,7 @@ class MenuTest(TestCase):
         res = self.client.get('/1/menu', {'rest_id':1})
         self.assertEqual(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertEqual(d, [{u'id': 1, u'price': 100, u'pic_url': u'', u'meal_category': None, u'name': u'M0', u'restaurant': 1, u'status': 0}])
+        self.assertEqual(d, [{u'id': 1, u'price': 60, u'pic_url': u'', u'meal_category': None, u'name': u'M0', u'restaurant': 1, u'status': 0}])
 
 class RestaurantsTest(TestCase):
     def test_restaurant_get(self):
@@ -794,7 +854,7 @@ class OldAPITest(TestCase):
                          {u'list': [{u'description': u'recommendation description test',
                                      u'name': u'M0',
                                      u'pic_uri': u'',
-                                     u'price': u'100',
+                                     u'price': u'60',
                                      u'restaurant_name': u'R0'}],
                           u'success': 1})
 
@@ -817,7 +877,7 @@ class OldAPITest(TestCase):
         res = self.client.get('/menu.php', {'rest_id':1})
         self.assertEqual(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertEqual(d, {u'meal_list': [{u'meal_price': 100,
+        self.assertEqual(d, {u'meal_list': [{u'meal_price': 60,
                                              u'meal_name': u'M0',
                                              u'meal_id': 1}],
                              u'success': 1})
@@ -854,7 +914,7 @@ class OldAPITest(TestCase):
                          {u'list': [{u'amount': 1,
                                      u'meal_id': 1,
                                      u'meal_name': u'M0',
-                                     u'meal_price': 100}],
+                                     u'meal_price': 60}],
                           u'success': True})
 
     def test_old_order(self):

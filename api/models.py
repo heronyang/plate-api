@@ -30,12 +30,13 @@ COMMENT_MAX = 200
 PASSWORD_MAX = 128
 GCM_REGISTRATION_ID_MAX = 600
 
-(ORDER_STATUS_INIT_COOKING,
- ORDER_STATUS_FINISHED,
- ORDER_STATUS_PICKED_UP,
- ORDER_STATUS_REJECTED,
- ORDER_STATUS_ABANDONED,
- ORDER_STATUS_RESCUED) = range(6)
+(ORDER_STATUS_INIT_COOKING, # order-incomplete
+ ORDER_STATUS_FINISHED,     # order-incomplete
+ ORDER_STATUS_PICKED_UP,    # order-complete
+ ORDER_STATUS_REJECTED,     # order-complete
+ ORDER_STATUS_ABANDONED,    # order-complete
+ ORDER_STATUS_RESCUED       # order-complete
+ ) = range(6)
 
 def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
     # Construct (key => scalar) payload. do not use nested structures.
@@ -229,6 +230,13 @@ class Profile(models.Model):
         message = '歡迎加入Plate點餐的行列，點選一下連結以啟動帳號！ ' + url
         return message
 
+    def free_to_order(self):
+        orders = Order.objects.filter(user=self.user)
+        for i in orders:
+            if i.status == ORDER_STATUS_FINISHED or i.status == ORDER_STATUS_INIT_COOKING:
+                return False
+        return True
+
     def __send_verification_message(self, msg):
         assert(0)
 
@@ -323,7 +331,8 @@ class Order(models.Model):
 
         # turn the order to abandon in (TIMEOUT_FOR_ADANDONED) seconds
         # if the user does not 'pickup' during this period
-        tasks.abandon.apply_async((self.id,), countdown=TIMEOUT_FOR_ADANDONED)
+        # NOTE: this function is turned off for MVP
+        #tasks.abandon.apply_async((self.id,), countdown=TIMEOUT_FOR_ADANDONED)
 
         # update restaurant current_number_slip
         self.restaurant.update_current_number_slip(self.pos_slip_number)

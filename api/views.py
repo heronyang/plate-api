@@ -11,6 +11,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 import django.views.generic.base
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
+from const import Configs
 import re
 
 from jsonate import jsonate
@@ -189,6 +190,26 @@ def order_post(request):
             res.content = "must be in the same restaurant"
             res.status_code = 400
             return res
+
+    # check if the total amount is over our limitation
+    total_price = 0
+    for i in order_data:
+        (meal_key, amount) = (i['meal_id'], i['amount'])
+        meal = Meal.objects.get(pk=meal_key)
+        total_price += (meal.price * amount)
+    if total_price > Configs.MAX_TOTAL_PRICE_PER_ORDER:
+        res.content = "exceed max total price :" + str(Configs.MAX_TOTAL_PRICE_PER_ORDER)
+        # NOTE: this is a quick hack, we use rare status_code to descript different errors
+        res.status_code = 460
+        return res
+
+    # check if there's any unfinished order
+    profile = Profile.objects.get(user=user)
+    if not profile.free_to_order():
+        res.content = "there's one imcompleted order"
+        res.status_code = 461
+        return res
+
 
     # FIXME: does it make more sense to implement 'order_create' at Restuarant?
     i = order_data[0]
