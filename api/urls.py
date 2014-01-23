@@ -22,6 +22,9 @@ urlpatterns = patterns('',
     url(r'^1/finish$', views.finish, name='finish'),
     url(r'^1/pickup$', views.pickup, name='pickup'),
     url(r'^1/cancel$', views.cancel, name='cancel'),
+    url(r'^1/set_busy$', views.set_busy, name='set_busy'),
+    url(r'^1/set_not_busy$', views.set_not_busy, name='set_not_busy'),
+    url(r'^1/get_rest_status$', views.get_rest_status, name='get_rest_status'),
     url(r'^1/vendor_list$', views.vendor_list, name='vendor_list'),
 
     # not included in MVP

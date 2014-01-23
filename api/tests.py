@@ -14,6 +14,12 @@ from django.utils import timezone
 import api.models
 from api.models import *
 
+(RESTAURANT_STATUS_CLOSE,
+ RESTAURANT_STATUS_OPEN,
+ RESTAURANT_STATUS_BUSY,
+ RESTAURANT_STATUS_UNLISTED
+ ) = range(4)
+
 (ORDER_STATUS_INIT_COOKING,
  ORDER_STATUS_FINISHED,
  ORDER_STATUS_PICKED_UP,
@@ -818,6 +824,122 @@ class CancelOrderTest(TestCase):
 
         o = Order.objects.get(pk=o0.id)
         self.assertEqual(o.status, ORDER_STATUS_INIT_COOKING)
+
+class VendorStatusTest(TestCase):
+    def test_set_busy_failed_without_login(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
+
+        r0.status = RESTAURANT_STATUS_OPEN
+        r0.save()
+
+        res = self.client.post('/1/set_busy')
+        self.assertEqual(res.status_code, 302)
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
+
+    def test_set_busy_succeed(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
+
+        r0.status = RESTAURANT_STATUS_OPEN
+        r0.save()
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+        res = self.client.post('/1/set_busy')
+        self.assertEqual(res.status_code, 200)
+
+        # grab the object again to have the latest columns
+        self.assertEqual(r0, v0.profile.restaurant)
+        r = v0.profile.restaurant
+        rr = Restaurant.objects.get(id=r.id)
+        self.assertEqual(rr.status, RESTAURANT_STATUS_BUSY)
+
+    def test_set_not_busy_failed_without_login(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
+
+        r0.status = RESTAURANT_STATUS_OPEN
+        r0.save()
+
+        res = self.client.post('/1/set_not_busy')
+        self.assertEqual(res.status_code, 302)
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
+
+    def test_set_not_busy_succeed(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
+
+        r0.status = RESTAURANT_STATUS_OPEN
+        r0.save()
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/set_busy')
+        self.assertEqual(res.status_code, 200)
+
+        # grab the object again to have the latest columns
+        self.assertEqual(r0, v0.profile.restaurant)
+        r = v0.profile.restaurant
+        rr = Restaurant.objects.get(id=r.id)
+        self.assertEqual(rr.status, RESTAURANT_STATUS_BUSY)
+
+        #
+        res = self.client.post('/1/set_not_busy')
+        self.assertEqual(res.status_code, 200)
+
+        # grab the object again to have the latest columns
+        self.assertEqual(r0, v0.profile.restaurant)
+        r = v0.profile.restaurant
+        rr = Restaurant.objects.get(id=r.id)
+        self.assertEqual(rr.status, RESTAURANT_STATUS_OPEN)
+
+    def test_get_rest_status(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.get('/1/get_rest_status')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_CLOSE})
+
+        #
+        r0.status = RESTAURANT_STATUS_OPEN
+        r0.save()
+
+        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
+
+        res = self.client.get('/1/get_rest_status')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_OPEN})
 
 class MenuTest(TestCase):
     def test_menu_get(self):

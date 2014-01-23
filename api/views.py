@@ -570,6 +570,61 @@ def cancel(request):
     res.status_code = 200
     return res
 
+@csrf_exempt
+@require_POST
+@login_required
+@user_passes_test(is_vendor)
+def set_busy(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    r = vendor.profile.restaurant
+    r.set_busy()
+
+    res.status_code = 200
+    return res
+
+@csrf_exempt
+@require_POST
+@login_required
+@user_passes_test(is_vendor)
+def set_not_busy(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    r = vendor.profile.restaurant
+    r.set_not_busy()
+
+    res.status_code = 200
+    return res
+
+@csrf_exempt
+@require_GET
+@login_required
+@user_passes_test(is_vendor)
+def get_rest_status(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    r = vendor.profile.restaurant
+
+    res.status_code = 200
+    res.content = jsonate({'status':r.status})
+
+    return res
+
 ###
 
 @csrf_exempt

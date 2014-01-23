@@ -155,6 +155,31 @@ class Restaurant(models.Model):
                 n += 1
         return n
 
+    # status issues
+    def set_busy(self):
+        # just ignore if it's not open
+        if self.status == RESTAURANT_STATUS_OPEN:
+            self.status = RESTAURANT_STATUS_BUSY
+            self.save()
+
+    def set_not_busy(self):
+        if self.status == RESTAURANT_STATUS_BUSY:
+            #FIXME: this should be close when is not open
+            self.status = RESTAURANT_STATUS_OPEN
+            self.save()
+
+    def close(self):
+        self.status = RESTAURANT_STATUS_CLOSE
+        self.save()
+
+    def open(self):
+        self.status = RESTAURANT_STATUS_OPEN
+        self.save()
+
+    def get_status(self):
+        return self.status
+
+    #
     def __unicode__(self):
         return self.name
 
@@ -222,7 +247,6 @@ class Profile(models.Model):
                      collapse_key=collapse_key)
         else:
             raise TypeError()
-
 
     def add_user_registration(self, url_prefix, gcm_registration_id, password=None, raw_password=None):
         if (password is None) and (raw_password is None):
