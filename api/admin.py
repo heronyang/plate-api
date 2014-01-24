@@ -23,7 +23,7 @@ class MyUserAdmin(UserAdmin):
 
 class RestaurantAdmin(admin.ModelAdmin):
     # FIXME: symbolic names for 'location'
-    list_display = ('name', 'pic_tag', 'location_name', 'number_slip', 'current_number_slip', 'status')
+    list_display = ('name', 'pic_tag', 'location_name', 'number_slip', 'current_number_slip', 'status', 'description')
     search_fields = ['name']
     list_filter = ['location']
 

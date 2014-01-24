@@ -204,12 +204,28 @@ def order_post(request):
         return res
 
     # check if there's any unfinished order
-    profile = Profile.objects.get(user=user)
-    if not profile.free_to_order():
-        res.content = "there's one imcompleted order"
-        res.status_code = 461
-        return res
+    if False:
+        profile = Profile.objects.get(user=user)
+        if not profile.free_to_order():
+            res.content = "there's one imcompleted order"
+            res.status_code = 461
+            return res
 
+    #
+    if rest.status == RESTAURANT_STATUS_OPEN:
+        pass
+    elif rest.status == RESTAURANT_STATUS_CLOSE:
+        res.content = "the restaurant is closed"
+        res.status_code = 462
+        return res
+    elif rest.status == RESTAURANT_STATUS_BUSY:
+        res.content = "the restaurant is busy"
+        res.status_code = 463
+        return res
+    else:
+        res.content = "the restaurant is not avialable now"
+        res.status_code = 464
+        return res
 
     # FIXME: does it make more sense to implement 'order_create' at Restuarant?
     i = order_data[0]
@@ -684,7 +700,7 @@ def old_restaurants(request):
 
     l = []
     for i in rs :
-        l.append(dict(name=i.name, location=i.location, rest_id=i.id))
+        l.append(dict(name=i.name, location=i.location, rest_id=i.id, description=i.description))
     out['list'] = l
     res.content = json.dumps(out)
     res.status_code = 200

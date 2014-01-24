@@ -103,6 +103,9 @@ class Restaurant(models.Model):
     current_number_slip = models.IntegerField(default=0) # the last continous number slip
     capacity = models.IntegerField(default=99)
 
+    #
+    description = models.TextField(blank=True) # extra info for the recommendation
+
     def new_number_slip(self):
         self.number_slip += 1
         self.save()

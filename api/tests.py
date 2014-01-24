@@ -382,6 +382,55 @@ class OrderTest(TestCase):
         res = self.client.post('/1/order_post', {'order': jd})
         self.assertEqual(res.status_code, 461)
 
+    def test_order_restaurant_close(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        r0.status = RESTAURANT_STATUS_CLOSE
+        r0.save()
+
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0(create_new_restaurant=False)
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 462)
+
+    def test_order_restaurant_busy(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        r0.status = RESTAURANT_STATUS_BUSY
+        r0.save()
+
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0(create_new_restaurant=False)
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 463)
+
+    def test_order_restaurant_unlisted(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        r0.status = RESTAURANT_STATUS_UNLISTED
+        r0.save()
+
+        u0 = _User0.create(is_active=True)
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0(create_new_restaurant=False)
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 464)
+
+
     # get
     def test_get_success_empty(self):
         u0 = _User0.create(is_active=True)
@@ -412,6 +461,7 @@ class OrderTest(TestCase):
 
 def _create_restaurant0():
     r0 = Restaurant(name='R0', location=1)
+    r0.status = RESTAURANT_STATUS_OPEN
     r0.save()
     return r0
 
@@ -830,11 +880,6 @@ class VendorStatusTest(TestCase):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
-
-        r0.status = RESTAURANT_STATUS_OPEN
-        r0.save()
-
         res = self.client.post('/1/set_busy')
         self.assertEqual(res.status_code, 302)
 
@@ -843,11 +888,6 @@ class VendorStatusTest(TestCase):
     def test_set_busy_succeed(self):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
-
-        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
-
-        r0.status = RESTAURANT_STATUS_OPEN
-        r0.save()
 
         self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
 
@@ -867,10 +907,7 @@ class VendorStatusTest(TestCase):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
-
-        r0.status = RESTAURANT_STATUS_OPEN
-        r0.save()
+        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
 
         res = self.client.post('/1/set_not_busy')
         self.assertEqual(res.status_code, 302)
@@ -880,11 +917,6 @@ class VendorStatusTest(TestCase):
     def test_set_not_busy_succeed(self):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
-
-        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
-
-        r0.status = RESTAURANT_STATUS_OPEN
-        r0.save()
 
         self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
 
@@ -916,7 +948,7 @@ class VendorStatusTest(TestCase):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
+        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
 
         # login and post
         res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
@@ -927,19 +959,19 @@ class VendorStatusTest(TestCase):
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_CLOSE})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_OPEN})
 
         #
-        r0.status = RESTAURANT_STATUS_OPEN
+        r0.status = RESTAURANT_STATUS_CLOSE
         r0.save()
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
+        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
 
         res = self.client.get('/1/get_rest_status')
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_OPEN})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_CLOSE})
 
 class MenuTest(TestCase):
     def test_menu_get(self):
@@ -963,7 +995,7 @@ class RestaurantsTest(TestCase):
         res = self.client.get('/1/restaurants', {'location':1})
         self.assertEqual(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertEqual(d, [{u'capacity': 99, u'current_number_slip': 0, u'id': 1, u'location': 1, u'name': u'R0', u'number_slip': 0, u'pic_url': u'', u'status': 0}])
+        self.assertEqual(d, [{u'capacity': 99, u'current_number_slip': 0, u'id': 1, u'location': 1, u'name': u'R0', u'number_slip': 0, u'pic_url': u'', u'status': 1, u'description': u''}])
 
 class CurrentCookingOrdersTest(TestCase):
     def test_current_cooking_orders_empty(self):
@@ -1036,7 +1068,8 @@ class OldAPITest(TestCase):
         d = json.loads(res.content)
         self.assertEqual(d, {u'list': [{u'location': 1,
                                         u'name': u'R0',
-                                        u'rest_id': 1}],
+                                        u'rest_id': 1,
+                                        u'description': u''}],
                              u'success': 1})
 
     def test_old_menu(self):
