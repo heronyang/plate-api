@@ -17,6 +17,7 @@ from django.core.urlresolvers import reverse
 from django.db.utils import IntegrityError
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from gcmclient import *
+from const import Configs
 import tasks
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,14 @@ class Restaurant(models.Model):
             return location_names[self.location]
         return location_names[0]
 
+    def prior_notification(self):
+        prior_ns = self.current_number_slip + Configs.PRIOR_NUMBER_SLIPS
+        os = Order.objects.filter(restaurant=self)
+        for o in os:
+            if o.pos_slip_number == prior_ns:
+                p = o.user.profile
+                p.send_notification(caller='prior_notification', method='gcm')
+
     #
     def update_current_number_slip(self, pos_slip_number):
 
@@ -150,6 +159,8 @@ class Restaurant(models.Model):
             if not updated:
                 break
 
+        self.prior_notification()
+    #
     def current_cooking_orders(self):
         os = Order.objects.filter(restaurant=self)
         n = 0
@@ -233,6 +244,16 @@ class Profile(models.Model):
             message = '抱歉老闆因故無法完成訂單！'
             ticker = message
             collapse_key = 'order_canceled'
+        elif caller is 'pickup':
+            title = '已領餐'
+            message = '餐點已經順利領取，感謝使用Plate點餐系統'
+            ticker = message
+            collapse_key = 'order_pickuped'
+        elif caller is 'prior_notification':
+            title = '快好了'
+            message = '快輪到你領餐了，要起身去拿餐了哦！不然會涼掉'
+            ticker = message
+            collapse_key = 'prior_notification'
         else:
             raise TypeError()
 
@@ -389,11 +410,16 @@ class Order(models.Model):
         if self.status == ORDER_STATUS_FINISHED:
             self.status = ORDER_STATUS_PICKED_UP
             self.save()
+            p = self.user.profile
+            p.send_notification(caller='pickup', method='gcm')
             return True
         if self.status == ORDER_STATUS_ABANDONED:
             self.status = ORDER_STATUS_RESCUED
             self.save()
+            p = self.user.profile
+            p.send_notification(caller='pickup', method='gcm')
             return True
+
         #
         return False
 
@@ -408,6 +434,7 @@ class Order(models.Model):
         p = self.user.profile
         p.send_notification(caller='cancel', method='gcm')
 
+        self.restaurant.update_current_number_slip(self.pos_slip_number)
         return True
 
 class OrderItem(models.Model):

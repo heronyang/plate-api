@@ -3,3 +3,4 @@ class Urls(object):
 
 class Configs(object):
     MAX_TOTAL_PRICE_PER_ORDER = 300
+    PRIOR_NUMBER_SLIPS = 3
