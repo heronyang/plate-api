@@ -886,7 +886,7 @@ class VendorStatusTest(TestCase):
         # login and post
         res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
         self.assertEqual(res.status_code, 200)
-        res = self.client.get('/1/restaurant_status', {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
+        res = self.client.get('/1/restaurant_status', {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES, 'is_open':True})
         self.assertEqual(res.status_code, 200)
 
         # grab the object again to have the latest columns
@@ -908,7 +908,7 @@ class VendorStatusTest(TestCase):
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_OPEN})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_OPEN, 'is_open': True, 'closed_reason': ''})
 
         #
         r0.status = RESTAURANT_STATUS_MANUAL_CLOSE
@@ -918,7 +918,123 @@ class VendorStatusTest(TestCase):
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_CLOSE})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_CLOSE, 'is_open':False, 'closed_reason': ''})
+
+    def test_set_restaurant_status_to_close(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/restaurant_status', {'status':RESTAURANT_STATUS_MANUAL_CLOSE})
+        self.assertEqual(res.status_code, 200)
+
+        res = self.client.get('/1/restaurant_status')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_CLOSE, 'is_open':False, 'closed_reason': ''})
+
+    def test_set_restaurant_status_to_open(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/restaurant_status', {'status':RESTAURANT_STATUS_MANUAL_OPEN})
+        self.assertEqual(res.status_code, 200)
+
+        res = self.client.get('/1/restaurant_status')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_OPEN, 'is_open':True, 'closed_reason': ''})
+
+    def test_set_restaurant_status_to_follow_rule(self):
+        # point to other close reason
+        cr0 = ClosedReason(msg = 'C0')
+        cr0.save()
+        cr1 = ClosedReason(msg = 'C1')
+        cr1.save()
+
+        #
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+        r0.closed_reason = cr0
+        r0.save()
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/restaurant_status', {'status':RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
+        self.assertEqual(res.status_code, 200)
+
+        res = self.client.get('/1/restaurant_status')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES, 'is_open':True, 'closed_reason': 'C0'})
+
+        #
+        self.assertEqual(r0.closed_reason, ClosedReason.objects.get(pk=1))
+
+class ClosedReasonTest(TestCase):
+    def test_closed_reason_get(self):
+        # point to other close reason
+        cr0 = ClosedReason(msg = 'C0')
+        cr0.save()
+        cr1 = ClosedReason(msg = 'C1')
+        cr1.save()
+
+        #
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+        r0.closed_reason = cr0
+        r0.save()
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.get('/1/closed_reason')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, '[{"msg": "C0", "id": 1}, {"msg": "C1", "id": 2}]')
+
+    def test_closed_reason_post(self):
+        # point to other close reason
+        cr0 = ClosedReason(msg = 'C0')
+        cr0.save()
+        cr1 = ClosedReason(msg = 'C1')
+        cr1.save()
+
+        #
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+        r0.closed_reason = cr0
+        r0.save()
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/closed_reason', {'closed_reason': cr1.id})
+        self.assertEqual(res.status_code, 200)
+        rr = Restaurant.objects.get(id=r0.id)
+        self.assertEqual(rr.closed_reason.id, cr1.id)
+
+        res = self.client.post('/1/closed_reason', {'closed_reason': (cr0.id+200)})
+        self.assertEqual(res.status_code, 422)
+
 
 class MenuTest(TestCase):
     def test_menu_get(self):
@@ -1016,6 +1132,8 @@ class OldAPITest(TestCase):
         self.assertEqual(d, {u'list': [{u'location': 1,
                                         u'name': u'R0',
                                         u'rest_id': 1,
+                                        u'is_open': True,
+                                        u'closed_reason': u'',
                                         u'description': u''}],
                              u'success': 1})
 

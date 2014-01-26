@@ -115,9 +115,15 @@ class ClosedReason(models.Model):
         ClosedReason(msg='提早關門').save()
         ClosedReason(msg='特殊休假').save()
 
+    def __unicode__(self):
+        return self.msg
+
 class Location(models.Model):
     name = models.CharField(max_length=LOCATION_NAME_MAX)
     timezone = TimeZoneField()
+
+    def __unicode__(self):
+        return self.name
 
 class Restaurant(models.Model):
     name = models.CharField(max_length=RESTAURANT_NAME_MAX)
@@ -155,6 +161,7 @@ class Restaurant(models.Model):
     pic_tag.allow_tags = True
 
     # map the location to the real name
+    # not using
     def location_name(self):
         location_names = ["其他", "女二餐", "第二餐廳", "第一餐廳"]
         if len(location_names) > self.location:
@@ -203,7 +210,15 @@ class Restaurant(models.Model):
         return n
 
     def status_set(self, status):
+        if status == RESTAURANT_STATUS_FOLLOW_OPEN_RULES:
+            self.closed_reason = ClosedReason.objects.get(pk=1)
+
         self.status = status
+        self.save()
+
+    def closed_reason_set(self, closed_reason):
+        cr = ClosedReason.objects.get(pk=closed_reason)
+        self.closed_reason = cr
         self.save()
 
     @property

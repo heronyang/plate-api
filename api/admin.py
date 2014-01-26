@@ -23,9 +23,12 @@ class MyUserAdmin(UserAdmin):
 
 class RestaurantAdmin(admin.ModelAdmin):
     # FIXME: symbolic names for 'location'
-    list_display = ('name', 'pic_tag', 'location_name', 'number_slip', 'current_number_slip', 'status', 'description')
+    list_display = ('name', 'pic_tag', 'location', 'number_slip', 'current_number_slip', 'status', 'description')
     search_fields = ['name']
     list_filter = ['location']
+
+    def location(self):
+        return self.location.name
 
 class MealAdmin(admin.ModelAdmin):
     list_display = ('restaurant', 'name', 'price', 'status', 'pic_tag', 'pic_url', 'meal_category')
@@ -64,6 +67,12 @@ class MealRecommendationsAdmin(admin.ModelAdmin):
     search_fields = ['user__email', 'meal__name']
     list_filter = ['user']
 
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'timezone')
+
+class ClosedReasonAdmin(admin.ModelAdmin):
+    list_display = ('msg',)
+
 class UserRegistrationAdmin(admin.ModelAdmin):
     list_display = ('username', 'code', 'ctime', 'clicked')
 
@@ -82,3 +91,5 @@ admin.site.register(MealRecommendation, MealRecommendationsAdmin)
 admin.site.register(UserRegistration, UserRegistrationAdmin)
 admin.site.register(MealCategory)
 admin.site.register(GCMRegistrationId, GCMRegistrationIdAdmin)
+admin.site.register(Location, LocationAdmin)
+admin.site.register(ClosedReason, ClosedReasonAdmin)

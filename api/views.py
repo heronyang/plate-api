@@ -616,7 +616,6 @@ def set_not_busy(request):
     return res
 
 @csrf_exempt
-@require_GET
 @login_required
 @user_passes_test(is_vendor)
 def restaurant_status(request):
@@ -629,10 +628,70 @@ def restaurant_status(request):
 
     r = vendor.profile.restaurant
 
-    res.status_code = 200
-    res.content = jsonate({'status':r.status})
+    if request.method == 'GET':
 
-    return res
+        if r.closed_reason is None:
+            msg = ''
+        else:
+            msg = r.closed_reason.msg
+
+        res.status_code = 200
+        res.content = jsonate({'status':r.status, 'is_open':r.is_open, 'closed_reason':msg})
+
+        return res
+
+    if request.method == 'POST':
+        try:
+            status = request.POST['status']
+        except MultiValueDictKeyError:
+            res.content = "wrong input"
+            res.status_code = 400
+            return res
+
+        r.status_set(status)
+        res.status_code = 200
+
+        return res
+
+@csrf_exempt
+@login_required
+@user_passes_test(is_vendor)
+def closed_reason(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    r = vendor.profile.restaurant
+
+    if request.method == 'GET':
+
+        crs = ClosedReason.objects.all()
+
+        res.status_code = 200
+        res.content = jsonate(crs)
+
+        return res
+
+    if request.method == 'POST':
+        try:
+            cr = request.POST['closed_reason']
+        except MultiValueDictKeyError:
+            res.content = "wrong input"
+            res.status_code = 400
+            return res
+
+        try:
+            r.closed_reason_set(cr)
+        except ClosedReason.DoesNotExist:
+            res.content = "not such closed reason"
+            res.status_code = 422
+            return res
+
+        res.status_code = 200
+        return res
 
 ###
 
@@ -693,7 +752,17 @@ def old_restaurants(request):
 
     l = []
     for i in rs :
-        l.append(dict(name=i.name, location=i.location.id, rest_id=i.id, description=i.description))
+        if i.closed_reason is None:
+            msg = ''
+        else:
+            msg = i.closed_reason.msg
+
+        l.append(dict(name=i.name,
+                      location=i.location.id,
+                      rest_id=i.id,
+                      is_open=i.is_open,
+                      closed_reason=msg,
+                      description=i.description))
     out['list'] = l
     res.content = json.dumps(out)
     res.status_code = 200
