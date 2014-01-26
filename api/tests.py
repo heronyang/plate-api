@@ -379,6 +379,7 @@ class OrderTest(TestCase):
         self.assertEqual(oi.amount, 2)
         # FIXME: should also check 'number_slip' is set or not
 
+        # At most one order should be outstanding
         res = self.client.post('/1/order_post', {'order': jd})
         self.assertEqual(res.status_code, 461)
 

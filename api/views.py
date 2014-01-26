@@ -18,6 +18,10 @@ from jsonate import jsonate
 
 from api.models import *
 
+# Normally only allow one oustanding order per customer
+# Turn on only for testing
+ALLOW_MULTIPLE_OUTSTANDING_ORDERS = False
+
 CONTENT_TYPE_JSON = 'application/json'
 CONTENT_TYPE_TEXT = 'text/plain'
 
@@ -180,6 +184,7 @@ def order_post(request):
         res.status_code = 400
         return res
 
+    # FIXME: move business logic to Model classes
     # check if all meals are from the same restaurant
     m = order_data[0]['meal_id']
     rest = Meal.objects.get(pk=m).restaurant
@@ -203,11 +208,10 @@ def order_post(request):
         res.status_code = 460
         return res
 
-    # check if there's any unfinished order
-    if False:
+    if not ALLOW_MULTIPLE_OUTSTANDING_ORDERS:
         profile = Profile.objects.get(user=user)
         if not profile.free_to_order():
-            res.content = "there's one imcompleted order"
+            res.content = 'there are outstanding orders'
             res.status_code = 461
             return res
 
