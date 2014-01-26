@@ -1139,3 +1139,73 @@ class OldAPITest(TestCase):
         o = _create_order0()
         res = self.client.post('/cancel.php', {'number_slip_index': o.id})
         self.assertEqual(res.status_code, 200)
+
+class RestaurantOpenHoursTest(TestCase):
+    'Test open hours, scheduled holidays, weekend closing rules etc'
+    #     December 2013         January 2014          February 2014   
+    #Su Mo Tu We Th Fr Sa  Su Mo Tu We Th Fr Sa  Su Mo Tu We Th Fr Sa
+    # 1  2  3  4  5  6  7            1  2  3  4                     1 
+    # 8  9 10 11 12 13 14   5  6  7  8  9 10 11   2  3  4  5  6  7  8 
+    #15 16 17 18 19 20 21  12 13 14 15 16 17 18   9 10 11 12 13 14 15 
+    #22 23 24 25 26 27 28  19 20 21 22 23 24 25  16 17 18 19 20 21 22 
+    #29 30 31              26 27 28 29 30 31     23 24 25 26 27 28 
+
+    # Lunar new year: Jan 30, 2014
+
+    def test_manual_switch(self):
+        r0 = _create_restaurant0()
+        self.assertTrue(r0.is_open)
+        r0.close()
+        self.assertFalse(r0.is_open)
+
+    def test_closed_reason(self):
+        r0 = _create_restaurant0()
+        for i in range(4):
+            r0.closed_reason = i
+            self.assetTrue(r0.closed_reason_msg)
+
+    def test_open_hours(self):
+        r0 = _create_restaurant0()
+        r0.set_open_hours_for_test([(1100, 1300), (1700, 1930)])
+        r0.save()
+        today = datetime.date.today()
+        self.assetTrue(r0.is_open_on(datetime.combine(today, time.time(12))))
+        self.assetFalse(r0.is_open_on(datetime.combine(today, time.time(9))))
+        self.assetFalse(r0.is_open_on(datetime.combine(today, time.time(19, 30))))
+
+    def test_closed_never(self):
+        r0 = _create_restaurant0()
+        r0.closing_rule = RESTAURANT_CLOSED_NEVER
+        r0.save()
+        sat = datetime.date(2014, 2, 1)
+        self.assertTrue(sat.isoweekday(), 6)
+        self.assetTrue(r0.is_open_on(datetime.combine(sat, time.datetime(12))))
+
+    def test_closed_every_weekend(self):
+        r0 = _create_restaurant0()
+        r0.closing_rule = RESTAURANT_CLOSED_EVERY_WEEKEND
+        r0.save()
+        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 2, 1), time.time(12))))
+        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 2, 2), time.time(12))))
+        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 31), time.time(12))))
+
+    def test_closed_every_other_weekend(self):
+        r0 = _create_restaurant0()
+        r0.closing_rule = RESTAURANT_CLOSED_EVERY_OTHER_WEEKEND
+        r0.closed_every_other_week_initial_closed_weekend_sat_date = datetime.date(2014, 1, 7)
+        r0.save()
+        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 7), time.time(12))))
+        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 14), time.time(12))))
+        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 21), time.time())))
+        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 28), time.time())))
+
+    def test_holidays(self):
+        r0 = _create_restaurant0()
+        r0.set_open_hours_for_test([(1100, 1300), (1700, 1930)])
+        r0.set_scheduled_holidays_for_test([datetime.date(2014, 1, 29),
+                                            datetime.date(2014, 1, 30)])
+        r0.save()
+        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 28), time.time(12))))
+        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 29), time.time(12))))
+        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 30), time.time())))
+        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 31), time.time())))
