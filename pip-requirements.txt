@@ -6,3 +6,4 @@ south >=0.8,<0.9
 django-celery
 gcm-client
 flower
+django-timezone-field

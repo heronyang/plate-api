@@ -18,6 +18,7 @@ from django.db.utils import IntegrityError
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from gcmclient import *
 from const import Configs
+from timezone_field import TimeZoneField
 import tasks
 
 logger = logging.getLogger(__name__)
@@ -25,17 +26,23 @@ logger = logging.getLogger(__name__)
 TIMEOUT_FOR_ADANDONED = (15 * 60)   # sec
 
 RESTAURANT_NAME_MAX = 33
+LOCATION_NAME_MAX = 200
 MEAL_NAME_MAX = 85
 MEALCATEGORY_NAME_MAX = 85
 COMMENT_MAX = 200
 PASSWORD_MAX = 128
 GCM_REGISTRATION_ID_MAX = 600
 
-(RESTAURANT_STATUS_CLOSE,
- RESTAURANT_STATUS_OPEN,
- RESTAURANT_STATUS_BUSY,
- RESTAURANT_STATUS_UNLISTED
+(RESTAURANT_STATUS_FOLLOW_OPEN_RULES,
+ RESTAURANT_STATUS_MANUAL_OPEN,
+ RESTAURANT_STATUS_MANUAL_CLOSED,
+ RESTAURANT_STATUS_UNLISTED,
  ) = range(4)
+
+(CLOSED_NEVER,
+ CLOSED_EVERY_WEEKEND,
+ CLOSED_EVERY_OTHER_WEEKED
+ ) = range(3)
 
 (ORDER_STATUS_INIT_COOKING, # order-incomplete
  ORDER_STATUS_FINISHED,     # order-incomplete
@@ -45,6 +52,9 @@ GCM_REGISTRATION_ID_MAX = 600
  ORDER_STATUS_RESCUED,      # order-complete
  ORDER_STATUS_DROPPED       # order-complete
  ) = range(7)
+
+
+(SUN, MON, TUE, WED, THU, FRI, SAT) = range(7)
 
 def remove_incomplete_order():
     tasks.remove_incomplete_order.apply_async()
@@ -91,10 +101,17 @@ def db_init(unit_test_mode=True):
     c = Configuration(unit_test_mode=unit_test_mode)
     c.save()
 
+class ClosedReasonMsg(models.Model):
+    msg = models.TextField(blank=True)
+
+class Location(models.Model):
+    name = models.CharField(max_length=LOCATION_NAME_MAX)
+    timezone = TimeZoneField()
+
 class Restaurant(models.Model):
     name = models.CharField(max_length=RESTAURANT_NAME_MAX)
     pic_url = models.URLField(blank=True)
-    location = models.IntegerField(default=0) # Enum like
+    location = models.ForeignKey(Location)
     status = models.IntegerField(default=0) # Enum like
 
     # increase 1 when 1 order is added, no need to reset this field
@@ -103,6 +120,11 @@ class Restaurant(models.Model):
     # last number of the continous number slips
     current_number_slip = models.IntegerField(default=0) # the last continous number slip
     capacity = models.IntegerField(default=99)
+
+    #
+    closed_reason = models.ForeignKey(ClosedReasonMsg, null=True)
+    closed_rule = models.IntegerField(default=0)    #Enum like
+    closed_every_other_weekend_initial_weekend_sat = models.DateTimeField(null=True, blank=True)
 
     #
     description = models.TextField(blank=True) # extra info for the recommendation
@@ -169,33 +191,89 @@ class Restaurant(models.Model):
                 n += 1
         return n
 
-    # status issues
-    def set_busy(self):
-        # just ignore if it's not open
-        if self.status == RESTAURANT_STATUS_OPEN:
-            self.status = RESTAURANT_STATUS_BUSY
-            self.save()
-
-    def set_not_busy(self):
-        if self.status == RESTAURANT_STATUS_BUSY:
-            #FIXME: this should be close when is not open
-            self.status = RESTAURANT_STATUS_OPEN
-            self.save()
-
-    def close(self):
-        self.status = RESTAURANT_STATUS_CLOSE
+    def status_set(self, status):
+        self.status = status
         self.save()
 
-    def open(self):
-        self.status = RESTAURANT_STATUS_OPEN
-        self.save()
+    def closed_reason_msg(self):
+        return self.closed_reason.msg
 
-    def get_status(self):
-        return self.status
+    def is_open_on(self, dtime):
+        if self.status != RESTAURANT_STATUS_FOLLOW_OPEN_RULES:
+            if self.status == RESTAURANT_STATUS_MANUAL_OPEN:
+                return True
+            else:
+                return False
+
+        if is_closed_on_rule(dtime, self.closing_rule, self.closed_every_other_weekend_initial_weekend):
+            return False
+
+        holidays = RestaurantHoliday.objects.filter(restaurant=self)
+        for h in holidays:
+            if h.closed_date == dtime.date():
+                return False
+
+        ohs = RestaurantOpenHours.objects.filter(restaurant=self)
+        if not ohs:
+            # empty open hours list indicates 24 hr restaurants, e.g. 7-11
+            return True
+
+        for oh in ohs:
+            (s, e) = (oh.start, oh.end)
+            if dtime >= s and dtime <= e:
+                return True
+
+        return False
+
+    @property
+    def is_open(self):
+        return is_open_on(timezone.now())
+
+    def set_open_hours_for_test(self, open_hours):
+        tz = self.location.timezone
+
+        for oh in open_hours:
+            (s, e) = oh
+            start = datetime.time(s / 100, s % 100, tzinfo=tz)
+            end = datetime.time(e / 100, e % 100, tzinfo=tz)
+
+            roh = RestaurantOpenHours(restaurant=self, start=start, end=end)
+            roh.save()
 
     #
     def __unicode__(self):
         return self.name
+
+class RestaurantOpenHours(models.Model):
+    restaurant = models.ForeignKey(Restaurant)
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+
+class RestaurantHoliday(models.Model):
+    restaurant = models.ForeignKey(Restaurant)
+    closed_date = models.DateField()
+
+def is_weekend(date):
+    return date.isoweekday() in [6, 7]
+
+def is_closed_on_rule(date, closing_rule, init_day):
+    if closing_rule == CLOSED_EVERY_WEEKEND:
+        return is_weekend(date)
+
+    elif closing_rule == CLOSED_EVERY_OTHER_WEEKED:
+        if not is_weekend(date):
+            return False
+
+        day1 = (date - timedelta(days=date.weekday()))
+        day2 = (init_day - timedelta(days=init_day.weekday()))
+        weeks = (day2 - day1).days() / 7
+
+        if (weeks % 2) == 0:
+            return True
+        else:
+            return False
+
+    return False
 
 class Profile(models.Model):
     # additional info keyed on User

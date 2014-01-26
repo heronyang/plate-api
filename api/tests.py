@@ -14,19 +14,6 @@ from django.utils import timezone
 import api.models
 from api.models import *
 
-(RESTAURANT_STATUS_CLOSE,
- RESTAURANT_STATUS_OPEN,
- RESTAURANT_STATUS_BUSY,
- RESTAURANT_STATUS_UNLISTED
- ) = range(4)
-
-(ORDER_STATUS_INIT_COOKING,
- ORDER_STATUS_FINISHED,
- ORDER_STATUS_PICKED_UP,
- ORDER_STATUS_REJECTED,
- ORDER_STATUS_ABANDONED,
- ORDER_STATUS_RESCUED) = range(6)
-
 PHONE_NUMBER1 = '0911111111'
 PHONE_NUMBER2 = '0922222222'
 PHONE_NUMBER3 = '0933333333'
@@ -386,7 +373,7 @@ class OrderTest(TestCase):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        r0.status = RESTAURANT_STATUS_CLOSE
+        r0.status = RESTAURANT_STATUS_MANUAL_CLOSE
         r0.save()
 
         u0 = _User0.create(is_active=True)
@@ -876,102 +863,57 @@ class CancelOrderTest(TestCase):
         self.assertEqual(o.status, ORDER_STATUS_INIT_COOKING)
 
 class VendorStatusTest(TestCase):
-    def test_set_busy_failed_without_login(self):
+    def test_set_status_failed_without_login(self):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        res = self.client.post('/1/set_busy')
+        res = self.client.post('/1/set_restaurant_status')
         self.assertEqual(res.status_code, 302)
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
+        self.assertEqual(r0.status, RESTAURANT_STATUS_FOLLOW_OPEN_RULES)
 
-    def test_set_busy_succeed(self):
+    def test_set_status_succeed(self):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
+        self.assertEqual(r0.status, RESTAURANT_STATUS_FOLLOW_OPEN_RULES)
 
         # login and post
         res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
         self.assertEqual(res.status_code, 200)
-        res = self.client.post('/1/set_busy')
+        res = self.client.post('/1/restaurant_status', {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
         self.assertEqual(res.status_code, 200)
 
         # grab the object again to have the latest columns
         self.assertEqual(r0, v0.profile.restaurant)
         r = v0.profile.restaurant
         rr = Restaurant.objects.get(id=r.id)
-        self.assertEqual(rr.status, RESTAURANT_STATUS_BUSY)
+        self.assertEqual(rr.status, RESTAURANT_STATUS_FOLLOW_OPEN_RULES)
 
-    def test_set_not_busy_failed_without_login(self):
+    def test_get_restaurant_status(self):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
-
-        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
-
-        res = self.client.post('/1/set_not_busy')
-        self.assertEqual(res.status_code, 302)
-
-        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
-
-    def test_set_not_busy_succeed(self):
-        r0 = _create_restaurant0()
-        v0 = _Vendor0.create(restaurant=r0)
-
-        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
 
         # login and post
         res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
         self.assertEqual(res.status_code, 200)
 
         #
-        res = self.client.post('/1/set_busy')
-        self.assertEqual(res.status_code, 200)
-
-        # grab the object again to have the latest columns
-        self.assertEqual(r0, v0.profile.restaurant)
-        r = v0.profile.restaurant
-        rr = Restaurant.objects.get(id=r.id)
-        self.assertEqual(rr.status, RESTAURANT_STATUS_BUSY)
-
-        #
-        res = self.client.post('/1/set_not_busy')
-        self.assertEqual(res.status_code, 200)
-
-        # grab the object again to have the latest columns
-        self.assertEqual(r0, v0.profile.restaurant)
-        r = v0.profile.restaurant
-        rr = Restaurant.objects.get(id=r.id)
-        self.assertEqual(rr.status, RESTAURANT_STATUS_OPEN)
-
-    def test_get_rest_status(self):
-        r0 = _create_restaurant0()
-        v0 = _Vendor0.create(restaurant=r0)
-
-        self.assertEqual(r0.status, RESTAURANT_STATUS_OPEN)
-
-        # login and post
-        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
-        self.assertEqual(res.status_code, 200)
-
-        #
-        res = self.client.get('/1/get_rest_status')
+        res = self.client.get('/1/restaurant_status')
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_OPEN})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
 
         #
-        r0.status = RESTAURANT_STATUS_CLOSE
+        r0.status = RESTAURANT_STATUS_MANUAL_CLOSE
         r0.save()
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
-
-        res = self.client.get('/1/get_rest_status')
+        res = self.client.get('/1/restaurant_status')
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_CLOSE})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_CLOSE})
 
 class MenuTest(TestCase):
     def test_menu_get(self):
