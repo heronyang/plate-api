@@ -5,11 +5,14 @@ when you run "manage.py test".
 Replace this with more appropriate tests for your application.
 """
 
+import datetime
 import json
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+
+import pytz
 
 import api.models
 from api.models import *
@@ -386,11 +389,11 @@ class OrderTest(TestCase):
         res = self.client.post('/1/order_post', {'order': jd})
         self.assertEqual(res.status_code, 462)
 
-    def test_order_restaurant_busy(self):
+    def test_order_restaurant_manual_closed(self):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        r0.status = RESTAURANT_STATUS_BUSY
+        r0.status = RESTAURANT_STATUS_MANUAL_CLOSE
         r0.save()
 
         u0 = _User0.create(is_active=True)
@@ -400,7 +403,7 @@ class OrderTest(TestCase):
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 463)
+        self.assertEqual(res.status_code, 462)
 
     def test_order_restaurant_unlisted(self):
         r0 = _create_restaurant0()
@@ -416,7 +419,7 @@ class OrderTest(TestCase):
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 464)
+        self.assertEqual(res.status_code, 462)
 
 
     # get
@@ -448,8 +451,9 @@ class OrderTest(TestCase):
         self.assertEqual(oi, [{"amount": 2, "meal": {u'meal_id': 1, u'meal_name': u'M0', u'meal_price': 60}}])
 
 def _create_restaurant0():
-    r0 = Restaurant(name='R0', location=1)
-    r0.status = RESTAURANT_STATUS_OPEN
+    (l0, created) = Location.objects.get_or_create(name='L0', timezone=pytz.timezone('Asia/Taipei'))
+    r0 = Restaurant(name='R0', location=l0)
+    r0.status = RESTAURANT_STATUS_MANUAL_OPEN
     r0.save()
     return r0
 
@@ -868,28 +872,28 @@ class VendorStatusTest(TestCase):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        res = self.client.post('/1/set_restaurant_status')
+        res = self.client.get('/1/restaurant_status')
         self.assertEqual(res.status_code, 302)
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_FOLLOW_OPEN_RULES)
+        self.assertEqual(r0.status, RESTAURANT_STATUS_MANUAL_OPEN)
 
     def test_set_status_succeed(self):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_FOLLOW_OPEN_RULES)
+        self.assertEqual(r0.status, RESTAURANT_STATUS_MANUAL_OPEN)
 
         # login and post
         res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
         self.assertEqual(res.status_code, 200)
-        res = self.client.post('/1/restaurant_status', {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
+        res = self.client.get('/1/restaurant_status', {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
         self.assertEqual(res.status_code, 200)
 
         # grab the object again to have the latest columns
         self.assertEqual(r0, v0.profile.restaurant)
         r = v0.profile.restaurant
         rr = Restaurant.objects.get(id=r.id)
-        self.assertEqual(rr.status, RESTAURANT_STATUS_FOLLOW_OPEN_RULES)
+        self.assertEqual(rr.status, RESTAURANT_STATUS_MANUAL_OPEN)
 
     def test_get_restaurant_status(self):
         r0 = _create_restaurant0()
@@ -904,7 +908,7 @@ class VendorStatusTest(TestCase):
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_OPEN})
 
         #
         r0.status = RESTAURANT_STATUS_MANUAL_CLOSE
@@ -938,7 +942,7 @@ class RestaurantsTest(TestCase):
         res = self.client.get('/1/restaurants', {'location':1})
         self.assertEqual(res.status_code, 200)
         d = json.loads(res.content)
-        self.assertEqual(d, [{u'capacity': 99, u'current_number_slip': 0, u'id': 1, u'location': 1, u'name': u'R0', u'number_slip': 0, u'pic_url': u'', u'status': 1, u'description': u''}])
+        self.assertEqual(d, [{u'capacity': 99, u'closed_every_other_weekend_initial_closed_weekend_sat': u'2014-01-04', u'closed_reason': None,u'closed_rule': 0, u'current_number_slip': 0, u'id': 1, u'location': 1, u'name': u'R0', u'number_slip': 0, u'pic_url': u'', u'status': 1, u'description': u''}])
 
 class CurrentCookingOrdersTest(TestCase):
     def test_current_cooking_orders_empty(self):
@@ -1097,70 +1101,78 @@ class OldAPITest(TestCase):
 
 class RestaurantOpenHoursTest(TestCase):
     'Test open hours, scheduled holidays, weekend closing rules etc'
-    #     December 2013         January 2014          February 2014   
+    #     December 2013         January 2014          February 2014
     #Su Mo Tu We Th Fr Sa  Su Mo Tu We Th Fr Sa  Su Mo Tu We Th Fr Sa
-    # 1  2  3  4  5  6  7            1  2  3  4                     1 
-    # 8  9 10 11 12 13 14   5  6  7  8  9 10 11   2  3  4  5  6  7  8 
-    #15 16 17 18 19 20 21  12 13 14 15 16 17 18   9 10 11 12 13 14 15 
-    #22 23 24 25 26 27 28  19 20 21 22 23 24 25  16 17 18 19 20 21 22 
-    #29 30 31              26 27 28 29 30 31     23 24 25 26 27 28 
+    # 1  2  3  4  5  6  7            1  2  3  4                     1
+    # 8  9 10 11 12 13 14   5  6  7  8  9 10 11   2  3  4  5  6  7  8
+    #15 16 17 18 19 20 21  12 13 14 15 16 17 18   9 10 11 12 13 14 15
+    #22 23 24 25 26 27 28  19 20 21 22 23 24 25  16 17 18 19 20 21 22
+    #29 30 31              26 27 28 29 30 31     23 24 25 26 27 28
 
     # Lunar new year: Jan 30, 2014
 
     def test_manual_switch(self):
         r0 = _create_restaurant0()
         self.assertTrue(r0.is_open)
-        r0.close()
+        r0.status = RESTAURANT_STATUS_MANUAL_CLOSE
         self.assertFalse(r0.is_open)
 
     def test_closed_reason(self):
+        ClosedReason.create_defaults()
         r0 = _create_restaurant0()
-        for i in range(4):
-            r0.closed_reason = i
-            self.assetTrue(r0.closed_reason_msg)
+
+        for i in range(1, 5):
+            r0.closed_reason = ClosedReason.objects.get(pk=i)
+            self.assertTrue(r0.closed_reason_msg)
 
     def test_open_hours(self):
         r0 = _create_restaurant0()
+        r0.status = RESTAURANT_STATUS_FOLLOW_OPEN_RULES
         r0.set_open_hours_for_test([(1100, 1300), (1700, 1930)])
         r0.save()
         today = datetime.date.today()
-        self.assetTrue(r0.is_open_on(datetime.combine(today, time.time(12))))
-        self.assetFalse(r0.is_open_on(datetime.combine(today, time.time(9))))
-        self.assetFalse(r0.is_open_on(datetime.combine(today, time.time(19, 30))))
+        self.assertTrue(r0.is_open_on(datetime.datetime.combine(today, datetime.time(12))))
+        self.assertFalse(r0.is_open_on(datetime.datetime.combine(today, datetime.time(9))))
+        self.assertFalse(r0.is_open_on(datetime.datetime.combine(today, datetime.time(19, 31))))
 
     def test_closed_never(self):
         r0 = _create_restaurant0()
-        r0.closing_rule = RESTAURANT_CLOSED_NEVER
+        r0.status = RESTAURANT_STATUS_FOLLOW_OPEN_RULES
+        r0.closed_rule = RESTAURANT_CLOSED_NEVER
         r0.save()
         sat = datetime.date(2014, 2, 1)
         self.assertTrue(sat.isoweekday(), 6)
-        self.assetTrue(r0.is_open_on(datetime.combine(sat, time.datetime(12))))
+        self.assertTrue(r0.is_open_on(datetime.datetime.combine(sat, datetime.time(12))))
 
     def test_closed_every_weekend(self):
         r0 = _create_restaurant0()
-        r0.closing_rule = RESTAURANT_CLOSED_EVERY_WEEKEND
+        r0.status = RESTAURANT_STATUS_FOLLOW_OPEN_RULES
+        r0.closed_rule = RESTAURANT_CLOSED_EVERY_WEEKEND
         r0.save()
-        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 2, 1), time.time(12))))
-        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 2, 2), time.time(12))))
-        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 31), time.time(12))))
+        self.assertFalse(r0.is_open_on(datetime.datetime.combine(datetime.date(2014, 2, 1), datetime.time(12))))
+        self.assertFalse(r0.is_open_on(datetime.datetime.combine(datetime.date(2014, 2, 2), datetime.time(12))))
+        self.assertTrue(r0.is_open_on(datetime.datetime.combine(datetime.date(2014, 1, 31), datetime.time(12))))
 
     def test_closed_every_other_weekend(self):
         r0 = _create_restaurant0()
-        r0.closing_rule = RESTAURANT_CLOSED_EVERY_OTHER_WEEKEND
-        r0.closed_every_other_week_initial_closed_weekend_sat_date = datetime.date(2014, 1, 7)
+        r0.status = RESTAURANT_STATUS_FOLLOW_OPEN_RULES
+        r0.closed_rule = RESTAURANT_CLOSED_EVERY_OTHER_WEEKEND
+        r0.closed_every_other_weekend_initial_closed_weekend_sat = datetime.date(2013, 12, 7)
         r0.save()
-        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 7), time.time(12))))
-        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 14), time.time(12))))
-        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 21), time.time())))
-        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 28), time.time())))
+        self.assertFalse(r0.is_open_on(datetime.datetime.combine(datetime.date(2013, 12, 7), datetime.time(12))))
+        self.assertTrue(r0.is_open_on(datetime.datetime.combine(datetime.date(2013, 12, 14), datetime.time(12))))
+        self.assertFalse(r0.is_open_on(datetime.datetime.combine(datetime.date(2013, 12, 21), datetime.time())))
+        self.assertTrue(r0.is_open_on(datetime.datetime.combine(datetime.date(2013, 12, 28), datetime.time())))
 
     def test_holidays(self):
         r0 = _create_restaurant0()
+        r0.status = RESTAURANT_STATUS_FOLLOW_OPEN_RULES
+        r0.closed_rule = RESTAURANT_CLOSED_NEVER
         r0.set_open_hours_for_test([(1100, 1300), (1700, 1930)])
         r0.set_scheduled_holidays_for_test([datetime.date(2014, 1, 29),
                                             datetime.date(2014, 1, 30)])
         r0.save()
-        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 28), time.time(12))))
-        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 29), time.time(12))))
-        self.assetFalse(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 30), time.time())))
-        self.assetTrue(r0.is_open_on(datetime.combine(datetime.date(2014, 1, 31), time.time())))
+        self.assertTrue(r0.is_open_on(datetime.datetime.combine(datetime.date(2014, 1, 28), datetime.time(12))))
+        self.assertFalse(r0.is_open_on(datetime.datetime.combine(datetime.date(2014, 1, 29), datetime.time(12))))
+        self.assertFalse(r0.is_open_on(datetime.datetime.combine(datetime.date(2014, 1, 30), datetime.time())))
+        self.assertTrue(r0.is_open_on(datetime.datetime.combine(datetime.date(2014, 1, 31), datetime.time(11))))

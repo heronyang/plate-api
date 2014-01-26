@@ -4,12 +4,15 @@ import uuid
 import re
 import logging
 import json
+import datetime
 import urllib2
+import pytz
 
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.utils.timezone import is_naive as datetime_is_naive
 from uuidfield import UUIDField
 from django.contrib.auth.models import User, Group
 from const import Urls
@@ -20,6 +23,9 @@ from gcmclient import *
 from const import Configs
 from timezone_field import TimeZoneField
 import tasks
+
+import warnings
+warnings.filterwarnings('error', 'DateTimeField')
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +41,13 @@ GCM_REGISTRATION_ID_MAX = 600
 
 (RESTAURANT_STATUS_FOLLOW_OPEN_RULES,
  RESTAURANT_STATUS_MANUAL_OPEN,
- RESTAURANT_STATUS_MANUAL_CLOSED,
+ RESTAURANT_STATUS_MANUAL_CLOSE,
  RESTAURANT_STATUS_UNLISTED,
  ) = range(4)
 
-(CLOSED_NEVER,
- CLOSED_EVERY_WEEKEND,
- CLOSED_EVERY_OTHER_WEEKED
+(RESTAURANT_CLOSED_NEVER,
+ RESTAURANT_CLOSED_EVERY_WEEKEND,
+ RESTAURANT_CLOSED_EVERY_OTHER_WEEKEND,
  ) = range(3)
 
 (ORDER_STATUS_INIT_COOKING, # order-incomplete
@@ -53,8 +59,6 @@ GCM_REGISTRATION_ID_MAX = 600
  ORDER_STATUS_DROPPED       # order-complete
  ) = range(7)
 
-
-(SUN, MON, TUE, WED, THU, FRI, SAT) = range(7)
 
 def remove_incomplete_order():
     tasks.remove_incomplete_order.apply_async()
@@ -101,8 +105,15 @@ def db_init(unit_test_mode=True):
     c = Configuration(unit_test_mode=unit_test_mode)
     c.save()
 
-class ClosedReasonMsg(models.Model):
+class ClosedReason(models.Model):
     msg = models.TextField(blank=True)
+
+    @staticmethod
+    def create_defaults():
+        ClosedReason(msg='非營業時間').save()
+        ClosedReason(msg='商家忙碌中').save()
+        ClosedReason(msg='提早關門').save()
+        ClosedReason(msg='特殊休假').save()
 
 class Location(models.Model):
     name = models.CharField(max_length=LOCATION_NAME_MAX)
@@ -122,9 +133,9 @@ class Restaurant(models.Model):
     capacity = models.IntegerField(default=99)
 
     #
-    closed_reason = models.ForeignKey(ClosedReasonMsg, null=True)
+    closed_reason = models.ForeignKey(ClosedReason, null=True)
     closed_rule = models.IntegerField(default=0)    #Enum like
-    closed_every_other_weekend_initial_weekend_sat = models.DateTimeField(null=True, blank=True)
+    closed_every_other_weekend_initial_closed_weekend_sat = models.DateField(default=datetime.date(2014, 1, 4), null=True)
 
     #
     description = models.TextField(blank=True) # extra info for the recommendation
@@ -195,6 +206,7 @@ class Restaurant(models.Model):
         self.status = status
         self.save()
 
+    @property
     def closed_reason_msg(self):
         return self.closed_reason.msg
 
@@ -205,7 +217,11 @@ class Restaurant(models.Model):
             else:
                 return False
 
-        if is_closed_on_rule(dtime, self.closing_rule, self.closed_every_other_weekend_initial_weekend):
+        location_tz = self.location.timezone
+        if datetime_is_naive(dtime):
+            dtime = dtime.replace(tzinfo=location_tz)
+
+        if is_closed_on_rule(dtime.date(), self.closed_rule, self.closed_every_other_weekend_initial_closed_weekend_sat):
             return False
 
         holidays = RestaurantHoliday.objects.filter(restaurant=self)
@@ -219,33 +235,40 @@ class Restaurant(models.Model):
             return True
 
         for oh in ohs:
-            (s, e) = (oh.start, oh.end)
-            if dtime >= s and dtime <= e:
+            (s, e) = (oh.start.replace(tzinfo=location_tz), oh.end.replace(tzinfo=location_tz))
+            if dtime.time() >= s and dtime.time() <= e:
                 return True
 
         return False
 
     @property
     def is_open(self):
-        return is_open_on(timezone.now())
+        return self.is_open_on(timezone.now())
 
     def set_open_hours_for_test(self, open_hours):
-        tz = self.location.timezone
-
+        RestaurantOpenHours.objects.filter(restaurant=self).delete()
         for oh in open_hours:
             (s, e) = oh
-            start = datetime.time(s / 100, s % 100, tzinfo=tz)
-            end = datetime.time(e / 100, e % 100, tzinfo=tz)
-
+            # Storing as timezone naive (i.e. non timezone aware) time objects for SQLite
+            # Will convert to timezone aware times in 'Restaurant.is_open'
+            start = datetime.time(s / 100, s % 100)
+            end = datetime.time(e / 100, e % 100)
             roh = RestaurantOpenHours(restaurant=self, start=start, end=end)
             roh.save()
+
+    def set_scheduled_holidays_for_test(self, holidays):
+        RestaurantHoliday.objects.filter(restaurant=self).delete()
+        location_tz = self.location.timezone
+        for i in holidays:
+            RestaurantHoliday(restaurant=self, closed_date=i).save()
+
     def __unicode__(self):
         return self.name
 
 class RestaurantOpenHours(models.Model):
     restaurant = models.ForeignKey(Restaurant)
-    start = models.DateTimeField()
-    end = models.DateTimeField()
+    start = models.TimeField()
+    end = models.TimeField()
 
 class RestaurantHoliday(models.Model):
     restaurant = models.ForeignKey(Restaurant)
@@ -254,17 +277,16 @@ class RestaurantHoliday(models.Model):
 def is_weekend(date):
     return date.isoweekday() in [6, 7]
 
-def is_closed_on_rule(date, closing_rule, init_day):
-    if closing_rule == CLOSED_EVERY_WEEKEND:
+def is_closed_on_rule(date, closed_rule, init_closed_weekend):
+    if closed_rule == RESTAURANT_CLOSED_EVERY_WEEKEND:
         return is_weekend(date)
-
-    elif closing_rule == CLOSED_EVERY_OTHER_WEEKED:
+    elif closed_rule == RESTAURANT_CLOSED_EVERY_OTHER_WEEKEND:
         if not is_weekend(date):
             return False
 
-        day1 = (date - timedelta(days=date.weekday()))
-        day2 = (init_day - timedelta(days=init_day.weekday()))
-        weeks = (day2 - day1).days() / 7
+        day1 = (date - datetime.timedelta(days=date.weekday()))
+        day2 = (init_closed_weekend - datetime.timedelta(days=init_closed_weekend.weekday()))
+        weeks = (day2 - day1).days / 7
 
         if (weeks % 2) == 0:
             return True

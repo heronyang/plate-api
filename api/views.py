@@ -253,7 +253,7 @@ def order_get(request):
 
     # last_order
     r_d = dict(name = last_order.restaurant.name,
-               location = last_order.restaurant.location,
+               location = last_order.restaurant.location.id,
                rest_id = last_order.restaurant.id)
     l_d = dict(ctime = last_order.ctime,
                mtime = last_order.mtime,
@@ -619,7 +619,7 @@ def set_not_busy(request):
 @require_GET
 @login_required
 @user_passes_test(is_vendor)
-def get_rest_status(request):
+def restaurant_status(request):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
     vendor = request.user
 
@@ -693,7 +693,7 @@ def old_restaurants(request):
 
     l = []
     for i in rs :
-        l.append(dict(name=i.name, location=i.location, rest_id=i.id, description=i.description))
+        l.append(dict(name=i.name, location=i.location.id, rest_id=i.id, description=i.description))
     out['list'] = l
     res.content = json.dumps(out)
     res.status_code = 200
