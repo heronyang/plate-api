@@ -31,7 +31,7 @@ dbschemachange:
 	for i in $(DJANGO_APPS); do \
 		./manage.py migrate $$i; \
 	done
-	./manage.py dumpdata --indent=3 api > plate-test.json
+	./manage.py dumpdata --natural --indent=3 api > plate-test.json
 
 .PHONY: dbdestroy
 dbdestroy:
