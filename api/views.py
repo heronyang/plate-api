@@ -218,7 +218,7 @@ def order_post(request):
     #
     if rest.status == RESTAURANT_STATUS_OPEN:
         pass
-    elif rest.status == RESTAURANT_STATUS_CLOSE:
+    elif rest.status == RESTAURANT_STATUS_CLOSED:
         res.content = "the restaurant is closed"
         res.status_code = 462
         return res

@@ -374,7 +374,7 @@ class OrderTest(TestCase):
         r0 = _create_restaurant0()
         v0 = _Vendor0.create(restaurant=r0)
 
-        r0.status = RESTAURANT_STATUS_CLOSE
+        r0.status = RESTAURANT_STATUS_CLOSED
         r0.save()
 
         u0 = _User0.create(is_active=True)
@@ -950,16 +950,16 @@ class VendorStatusTest(TestCase):
         self.assertEqual(d, {'status': RESTAURANT_STATUS_OPEN})
 
         #
-        r0.status = RESTAURANT_STATUS_CLOSE
+        r0.status = RESTAURANT_STATUS_CLOSED
         r0.save()
 
-        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSE)
+        self.assertEqual(r0.status, RESTAURANT_STATUS_CLOSED)
 
         res = self.client.get('/1/get_rest_status')
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_CLOSE})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_CLOSED})
 
 class MenuTest(TestCase):
     def test_menu_get(self):

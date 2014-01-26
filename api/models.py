@@ -31,7 +31,7 @@ COMMENT_MAX = 200
 PASSWORD_MAX = 128
 GCM_REGISTRATION_ID_MAX = 600
 
-(RESTAURANT_STATUS_CLOSE,
+(RESTAURANT_STATUS_CLOSED,
  RESTAURANT_STATUS_OPEN,
  RESTAURANT_STATUS_BUSY,
  RESTAURANT_STATUS_UNLISTED
@@ -183,17 +183,13 @@ class Restaurant(models.Model):
             self.save()
 
     def close(self):
-        self.status = RESTAURANT_STATUS_CLOSE
+        self.status = RESTAURANT_STATUS_CLOSED
         self.save()
 
     def open(self):
         self.status = RESTAURANT_STATUS_OPEN
         self.save()
 
-    def get_status(self):
-        return self.status
-
-    #
     def __unicode__(self):
         return self.name
 
