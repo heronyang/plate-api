@@ -215,20 +215,9 @@ def order_post(request):
             res.status_code = 461
             return res
 
-    #
-    if rest.status == RESTAURANT_STATUS_OPEN:
-        pass
-    elif rest.status == RESTAURANT_STATUS_CLOSED:
-        res.content = "the restaurant is closed"
+    if not rest.is_open:
+        res.content = "restaurant isn't open"
         res.status_code = 462
-        return res
-    elif rest.status == RESTAURANT_STATUS_BUSY:
-        res.content = "the restaurant is busy"
-        res.status_code = 463
-        return res
-    else:
-        res.content = "the restaurant is not avialable now"
-        res.status_code = 464
         return res
 
     # FIXME: does it make more sense to implement 'order_create' at Restuarant?
