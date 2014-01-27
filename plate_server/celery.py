@@ -16,11 +16,6 @@ app = Celery('plate_server')
 app.config_from_object('django.conf:settings')
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
-app.conf.update(
-        CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend',
-        )
-
-
-@app.task(bind=True)
+@app.task(bind=True, name='debug_task')
 def debug_task(self):
     print('Request: {0!r}'.format(self.request))

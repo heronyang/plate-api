@@ -550,6 +550,10 @@ class Order(models.Model):
         self.restaurant.update_current_number_slip(self.pos_slip_number)
         return True
 
+    @classmethod
+    def daily_cleanup(cls):
+        logger.info('Order.daily_cleanup: FIXME: implement')
+
 class OrderItem(models.Model):
     # NOTE: expect changes for business requirements
     meal = models.ForeignKey(Meal)

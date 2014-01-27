@@ -172,6 +172,21 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
+CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
+
+from celery.schedules import crontab
+from datetime import timedelta
+
+CELERYBEAT_SCHEDULE = {
+    'order-status-daily-cleanup': {
+        'task': 'api.tasks.order_status_daily_cleanup',
+        'schedule': crontab(hour=16), # 24:00 GMT+8 == 16:00 GMT
+        'args': ()
+    },
+}
+
+CELERY_TIMEZONE = 'UTC'
+
 try:
     from . import local_settings
 except ImportError:
