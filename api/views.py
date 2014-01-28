@@ -22,10 +22,6 @@ from jsonate import jsonate
 
 from api.models import *
 
-# Normally only allow one oustanding order per customer
-# Turn on only for testing
-ALLOW_MULTIPLE_OUTSTANDING_ORDERS = False
-
 UNIT_TEST_PHONE_NUMBER = None
 
 CONTENT_TYPE_JSON = 'application/json'
@@ -259,7 +255,7 @@ def order_post(request):
         res.status_code = 462
         return res
 
-    if not ALLOW_MULTIPLE_OUTSTANDING_ORDERS:
+    if not Configs.ALLOW_MULTIPLE_OUTSTANDING_ORDERS:
         profile = Profile.objects.get(user=user)
         if not profile.free_to_order():
             error_msg = "您有尚未完成的訂單，同時間只能進行一份訂單"
