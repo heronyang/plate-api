@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import datetime
 
 from django.http import HttpResponse
 from django.contrib.auth import authenticate
@@ -13,6 +14,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 import django.views.generic.base
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
+from django.utils import timezone
 from const import Configs
 import re
 
@@ -23,6 +25,8 @@ from api.models import *
 # Normally only allow one oustanding order per customer
 # Turn on only for testing
 ALLOW_MULTIPLE_OUTSTANDING_ORDERS = False
+
+UNIT_TEST_PHONE_NUMBER = None
 
 CONTENT_TYPE_JSON = 'application/json'
 CONTENT_TYPE_TEXT = 'text/plain'
@@ -63,6 +67,7 @@ def register(request):
         res.status_code = 400
         return res
 
+    #
     if (not phone_number) or (not gcm_registration_id):
         res.status_code = 400   # wrong input
         return res
@@ -84,6 +89,27 @@ def register(request):
 
     (profile, profile_created) = Profile.get_or_create(phone_number=phone_number, role='user')
 
+    # avoid mutliple registration in MINUTES_LOCK_BETWEEN_REGISTRATIONS
+    u = profile.user
+    try:
+        lr = LastRegistrationTime.objects.get(user=u)
+    except (LastRegistrationTime.DoesNotExist, LastRegistrationTime.MultipleObjectsReturned), err:
+        lr = None
+    if lr:
+        now = timezone.now()
+        last = lr.last_time
+        d = datetime.timedelta(minutes=Configs.MINUTES_LOCK_BETWEEN_REGISTRATIONS)
+        if now < (last + d):
+            res.content = "just registered before, retry again later"
+            res.status_code = 470
+            return res
+        lr.last_time = timezone.now()
+        lr.save()
+    else:
+        new_lr = LastRegistrationTime(user=u, last_time = timezone.now())
+        new_lr.save()
+
+    #
     url_prefix = request.build_absolute_uri()[:-len(request.get_full_path())]
     wsgi_mount_point = request.path[:-len(request.path_info)]
     if wsgi_mount_point:
@@ -91,8 +117,23 @@ def register(request):
 
     m = profile.add_user_registration(url_prefix, password=password, gcm_registration_id=gcm_registration_id)
     c = Configuration.get0()
+
+    # send SMS here
     if not c.unit_test_mode:
-        profile.__send_verification_message(m)
+        (sms_is_send, sms_error_code) = profile.send_verification_message(m, phone_number)
+    else:
+        if not UNIT_TEST_PHONE_NUMBER:
+            (sms_is_send, sms_error_code) = (True, None)
+            pass
+        elif UNIT_TEST_PHONE_NUMBER == "register":
+            (sms_is_send, sms_error_code) = profile.send_verification_message(m, phone_number)
+        else:
+            (sms_is_send, sms_error_code) = profile.send_verification_message(m, UNIT_TEST_PHONE_NUMBER)
+
+    if not sms_is_send:
+        # FIXME: error handler here, just drop now
+        pass
+    #
 
     res.status_code = 200
     return res
@@ -103,7 +144,7 @@ def activate(request):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
 
     #FIXME: check if the record is clicked
-    code = request.GET['code']
+    code = request.GET['c']
     try:
         ur = UserRegistration.objects.get(code=code)
     except UserRegistration.DoesNotExist:

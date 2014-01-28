@@ -23,13 +23,25 @@ from gcmclient import *
 from const import Configs
 from timezone_field import TimeZoneField
 import tasks
+import keys
+
+from twilio.rest import TwilioRestClient
+from twilio import TwilioRestException
 
 import warnings
+
 warnings.filterwarnings('error', 'DateTimeField')
 
 logger = logging.getLogger(__name__)
 
 TIMEOUT_FOR_ADANDONED = (15 * 60)   # sec
+
+# TWILIO SMS ACCOUNT
+TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
+TWILIO_AUTH_TOKEN = keys.TWILIO_AUTH_TOKEN
+TWILIO_PHONE_NUMBER = '+12409794102'
+
+RESISTER_WELCOME_MESSAGE = ''
 
 RESTAURANT_NAME_MAX = 33
 LOCATION_NAME_MAX = 200
@@ -93,6 +105,10 @@ class Configuration(models.Model):
     @classmethod
     def get0(cls):
         return cls.objects.get(pk=1)
+
+class LastRegistrationTime(models.Model):
+    user = models.ForeignKey(get_user_model())
+    last_time = models.DateTimeField()
 
 def db_init(unit_test_mode=True):
     (vendor_group, vendor_group_created) = Group.objects.get_or_create(name='vendor')
@@ -280,6 +296,10 @@ class Restaurant(models.Model):
     def __unicode__(self):
         return self.name
 
+class VendorLastRequestTime(models.Model):
+    restaurant = models.ForeignKey(Restaurant)
+    last_time = models.DateTimeField()
+
 class RestaurantOpenHours(models.Model):
     restaurant = models.ForeignKey(Restaurant)
     start = models.TimeField()
@@ -406,7 +426,6 @@ class Profile(models.Model):
         ur.save()
 
         # avoid duplication
-        # FIXME: BUG!!!!!!! (Tried Fixed)
         gs = GCMRegistrationId.objects.filter(gcm_registration_id=gcm_registration_id)
         is_exist = False
         for g in gs:
@@ -417,8 +436,8 @@ class Profile(models.Model):
             gr.save()
 
         # FIXME: generate URL
-        url = url_prefix + reverse('activate') + '?code=' + code.hex
-        message = '歡迎加入Plate點餐的行列，點選一下連結以啟動帳號！ ' + url
+        url = url_prefix + reverse('activate') + '?c=' + code.hex
+        message = RESISTER_WELCOME_MESSAGE + url
         return message
 
     def free_to_order(self):
@@ -428,8 +447,19 @@ class Profile(models.Model):
                 return False
         return True
 
-    def __send_verification_message(self, msg):
-        assert(0)
+    def send_verification_message(self, msg, phone_number):
+        international_phone_number = "+886" + phone_number[1:] # 09xx... => +8869xx...
+        client = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+        try:
+            sms = client.sms.messages.create(body=msg,
+                                             to=international_phone_number,
+                                             from_=TWILIO_PHONE_NUMBER)
+        except TwilioRestException as Ex:
+            return (False, Ex.code)
+        else:
+            return (True, None)
+        # assert(0)
 
     def __unicode__(self):
         return self.phone_number
@@ -613,3 +643,4 @@ class UserRegistration(models.Model):
         user.save()
 
         # FIXME: DevicePassword
+

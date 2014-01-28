@@ -7,3 +7,4 @@ django-celery
 gcm-client
 flower
 django-timezone-field
+twilio ==3.6.4

@@ -112,19 +112,23 @@ class LoginTest(TestCase):
 
 class RegisterTest(TestCase):
     def test_bad_requests0(self):
+        api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': '', 'gcm_registration_id': ''})
         self.assertEqual(res.status_code, 400)
 
     def test_bad_requests1(self):
+        api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
             'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': ''})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format0(self):
+        api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': '091112312',  'password_type': 'raw', 'password': '1', 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format1(self):
+        api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': '0911123123',  'password_type': 'raw', 'password': '', 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 400)
 
@@ -146,24 +150,24 @@ class RegisterTest(TestCase):
 
 class ActivateTest(TestCase):
     def test_not_listed(self):
-        res = self.client.get('/1/activate', {'code':'xxx'})
+        res = self.client.get('/1/a', {'c':'xxx'})
         self.assertEqual(res.status_code, 401)
 
     def test_success(self):
         u0 = _User0.create()
         m = u0.profile.add_user_registration(url_prefix='', raw_password=_User0.password, gcm_registration_id=_User0.gcm_registration_id)
-        start = m.find('/1/activate')
-        end = m.find('?code=', start)
+        start = m.find('/1/a')
+        end = m.find('?c=', start)
         self.assertNotEqual(start, -1)
         self.assertNotEqual(end, -1)
         url = m[start:end]
-        (start, end) = ((end + len('?code=')), m.find(' ', start))
+        (start, end) = ((end + len('?c=')), m.find(' ', start))
         if end == -1:
             code = m[start:]
         else:
             code = m[start:end]
-        self.assertEqual(url, '/1/activate')
-        res = self.client.get(url, {'code': code})
+        self.assertEqual(url, '/1/a')
+        res = self.client.get(url, {'c': code})
         self.assertEqual(res.status_code, 200)
         # u0: reload
         u0 = User.objects.get(pk=u0.id)
