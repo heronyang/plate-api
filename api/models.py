@@ -362,6 +362,11 @@ class Profile(models.Model):
             message = '餐點已經順利領取，感謝使用Plate點餐系統'
             ticker = message
             collapse_key = 'order_pickuped'
+        elif caller is 'failure':
+            title = '未領餐'
+            message = '嗨，很可惜看來你今天沒有去領餐，將計上一筆失敗記錄，第二次失敗便不能再次點餐'
+            ticker = message
+            collapse_key = 'order_failure'
         elif caller is 'prior_notification':
             title = '快好了'
             message = '快輪到你領餐了，要起身去拿餐了哦！不然會涼掉'
@@ -401,7 +406,13 @@ class Profile(models.Model):
         ur.save()
 
         # avoid duplication
-        if not GCMRegistrationId.objects.filter(gcm_registration_id=gcm_registration_id):
+        # FIXME: BUG!!!!!!! (Tried Fixed)
+        gs = GCMRegistrationId.objects.filter(gcm_registration_id=gcm_registration_id)
+        is_exist = False
+        for g in gs:
+            if g.user == self.user:
+                is_exist = True
+        if not is_exist:
             gr = GCMRegistrationId(user=self.user, gcm_registration_id=gcm_registration_id)
             gr.save()
 
@@ -552,7 +563,23 @@ class Order(models.Model):
 
     @classmethod
     def daily_cleanup(cls):
-        logger.info('Order.daily_cleanup: FIXME: implement')
+        logger.info('Order.daily_cleanup: ' + str(timezone.now()))
+        os = Order.objects.all()
+        for o in os:
+            if o.status == ORDER_STATUS_FINISHED:
+                p = o.user.profile
+                p.failure += 1
+                p.save()
+
+                p.send_notification(caller='failure', method='gcm')
+                o.status = ORDER_STATUS_ABANDONED
+                o.save()
+
+            elif o.status == ORDER_STATUS_INIT_COOKING:
+                # no need for gcm here
+                o.status = ORDER_STATUS_DROPPED
+                o.save()
+
 
 class OrderItem(models.Model):
     # NOTE: expect changes for business requirements

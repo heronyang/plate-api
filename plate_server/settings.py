@@ -180,7 +180,8 @@ from datetime import timedelta
 CELERYBEAT_SCHEDULE = {
     'order-status-daily-cleanup': {
         'task': 'api.tasks.order_status_daily_cleanup',
-        'schedule': crontab(hour=16), # 24:00 GMT+8 == 16:00 GMT
+        #'schedule': crontab(hour=16), # 24:00 GMT+8 == 16:00 GMT
+        'schedule': crontab(hour=2, minute=26), # 24:00 GMT+8 == 16:00 GMT
         'args': ()
     },
 }

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 
 from django.http import HttpResponse
@@ -203,21 +205,32 @@ def order_post(request):
         meal = Meal.objects.get(pk=meal_key)
         total_price += (meal.price * amount)
     if total_price > Configs.MAX_TOTAL_PRICE_PER_ORDER:
-        res.content = "exceed max total price :" + str(Configs.MAX_TOTAL_PRICE_PER_ORDER)
-        # NOTE: this is a quick hack, we use rare status_code to descript different errors
-        res.status_code = 460
+        error_msg = "總價錢不得超過" + str(Configs.MAX_TOTAL_PRICE_PER_ORDER) + "元"
+        res.content = jsonate({'error_msg':error_msg})
+        res.status_code = 461
+        return res
+
+    if user.profile.failure >= Configs.MAX_ACCEPTABLE_FAILURE:
+        error_msg = "您已經有" + str(Configs.MAX_ACCEPTABLE_FAILURE) + "次以上的訂單失敗記錄，不得再領餐。 洽plate-service@googlegroups.com"
+        res.content = jsonate({'error_msg':error_msg})
+        res.status_code = 462
         return res
 
     if not ALLOW_MULTIPLE_OUTSTANDING_ORDERS:
         profile = Profile.objects.get(user=user)
         if not profile.free_to_order():
-            res.content = 'there are outstanding orders'
-            res.status_code = 461
+            error_msg = "您有尚未完成的訂單，同時間只能進行一份訂單"
+            res.content = jsonate({'error_msg':error_msg})
+            res.status_code = 463
             return res
 
     if not rest.is_open:
-        res.content = "restaurant isn't open"
-        res.status_code = 462
+        if rest.closed_reason is None:
+            error_msg = ''
+        else:
+            error_msg = rest.closed_reason.msg
+        res.content = jsonate({'error_msg':error_msg})
+        res.status_code = 464
         return res
 
     # FIXME: does it make more sense to implement 'order_create' at Restuarant?
@@ -636,7 +649,9 @@ def restaurant_status(request):
             msg = r.closed_reason.msg
 
         res.status_code = 200
-        res.content = jsonate({'status':r.status, 'is_open':r.is_open, 'closed_reason':msg})
+        res.content = jsonate({'status':r.status,
+                               'is_open':r.is_open,
+                               'closed_reason':msg})
 
         return res
 
@@ -671,7 +686,7 @@ def closed_reason(request):
         crs = ClosedReason.objects.all()
 
         res.status_code = 200
-        res.content = jsonate(crs)
+        res.content = jsonate({'closed_reasons':crs})
 
         return res
 

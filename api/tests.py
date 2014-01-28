@@ -234,10 +234,10 @@ class OrderTest(TestCase):
         _login_through_api(self, _User0.username, _User0.password)
 
         m0 = _create_meal0()
-        jd = json.dumps( [{'meal_id': m0.id, 'amount': 6}] )
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 60}] )
         res = self.client.post('/1/order_post', {'order': jd})
 
-        self.assertEqual(res.status_code, 460)
+        self.assertEqual(res.status_code, 461)
 
     def test_success(self):
         u0 = _User0.create(is_active=True)
@@ -371,7 +371,7 @@ class OrderTest(TestCase):
 
         # At most one order should be outstanding
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 461)
+        self.assertEqual(res.status_code, 463)
 
     def test_order_restaurant_close(self):
         r0 = _create_restaurant0()
@@ -387,7 +387,7 @@ class OrderTest(TestCase):
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 462)
+        self.assertEqual(res.status_code, 464)
 
     def test_order_restaurant_manual_closed(self):
         r0 = _create_restaurant0()
@@ -403,7 +403,7 @@ class OrderTest(TestCase):
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 462)
+        self.assertEqual(res.status_code, 464)
 
     def test_order_restaurant_unlisted(self):
         r0 = _create_restaurant0()
@@ -419,8 +419,25 @@ class OrderTest(TestCase):
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 462)
+        self.assertEqual(res.status_code, 464)
 
+    def test_order_restaurant_failure_over_max(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        u0 = _User0.create(is_active=True)
+
+        p = u0.profile
+        p.failure = 2
+        p.save()
+
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0(create_new_restaurant=False)
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 462)
 
     # get
     def test_get_success_empty(self):
@@ -1007,7 +1024,7 @@ class ClosedReasonTest(TestCase):
         #
         res = self.client.get('/1/closed_reason')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.content, '[{"msg": "C0", "id": 1}, {"msg": "C1", "id": 2}]')
+        self.assertEqual(res.content, '{"closed_reasons": [{"msg": "C0", "id": 1}, {"msg": "C1", "id": 2}]}')
 
     def test_closed_reason_post(self):
         # point to other close reason
