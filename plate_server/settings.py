@@ -172,8 +172,8 @@ AUTHENTICATION_BACKENDS = (
 
 BROKER_URL = 'amqp://guest:guest@localhost//'
 CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
-CELERY_ACCEPT_CONTENT = [ 'json' ]
-CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = [ 'pickle' ]
+CELERY_TASK_SERIALIZER = 'pickle'
 # enable 'pool_restart' command for reloading tasks
 CELERYD_POOL_RESTARTS = True
 
