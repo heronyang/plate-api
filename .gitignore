@@ -11,3 +11,4 @@ local_settings.py
 plate.sqlite3
 tags
 celerybeat-schedule
+celerybeat.pid

@@ -1244,7 +1244,7 @@ class RestaurantOpenHoursTest(TestCase):
     #22 23 24 25 26 27 28  19 20 21 22 23 24 25  16 17 18 19 20 21 22
     #29 30 31              26 27 28 29 30 31     23 24 25 26 27 28
 
-    # Lunar new year: Jan 30, 2014
+    # Lunar new year: Jan 31, 2014
 
     def test_manual_switch(self):
         r0 = _create_restaurant0()
