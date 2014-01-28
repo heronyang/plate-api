@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from api.models import *
+from pytz import timezone
 
 class ProfileInline(admin.StackedInline):
     model = Profile
@@ -82,6 +83,12 @@ class UserRegistrationAdmin(admin.ModelAdmin):
 class GCMRegistrationIdAdmin(admin.ModelAdmin):
     list_display = ('user', 'gcm_registration_id')
 
+class LastRegistrationTimeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'last_time')
+
+class VendorLastRequestTimeAdmin(admin.ModelAdmin):
+    list_display = ('restaurant', 'last_time')
+
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
 admin.site.register(Restaurant, RestaurantAdmin)
@@ -93,3 +100,5 @@ admin.site.register(MealCategory)
 admin.site.register(GCMRegistrationId, GCMRegistrationIdAdmin)
 admin.site.register(Location, LocationAdmin)
 admin.site.register(ClosedReason, ClosedReasonAdmin)
+admin.site.register(VendorLastRequestTime, VendorLastRequestTimeAdmin)
+admin.site.register(LastRegistrationTime, LastRegistrationTimeAdmin)

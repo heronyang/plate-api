@@ -101,6 +101,8 @@ def register(request):
         d = datetime.timedelta(minutes=Configs.MINUTES_LOCK_BETWEEN_REGISTRATIONS)
         if now < (last + d):
             res.content = "just registered before, retry again later"
+            error_msg = "已經註冊，若無收到簡訊，請在" + str(Configs.MINUTES_LOCK_BETWEEN_REGISTRATIONS) + "分鐘後再嘗試"
+            res.content = jsonate({'error_msg':error_msg})
             res.status_code = 470
             return res
         lr.last_time = timezone.now()
@@ -521,6 +523,15 @@ def order_vendor(request):
 
         row['order_items'] = oi_packed
         r.append(row)
+
+    # update vendor last request
+    try:
+        vl = VendorLastRequestTime.objects.get(restaurant=restaurant)
+        vl.last_time = timezone.now()
+        vl.save()
+    except VendorLastRequestTime.DoesNotExist:
+        vl = VendorLastRequestTime(restaurant=restaurant, last_time=timezone.now())
+        vl.save()
 
     res.status_code = 200
     res.content = jsonate(dict(orders=r))

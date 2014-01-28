@@ -144,6 +144,21 @@ class RegisterTest(TestCase):
         assert(len(rs2) == 1)
         self.assertEqual(rs2[0].user.username, _User0.username)
 
+    def test_fail_multiple_request(self):
+        api.models.db_init(unit_test_mode=True)
+        res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
+            'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': _User0.gcm_registration_id})
+        self.assertEqual(res.status_code, 200)
+        rs = UserRegistration.objects.filter(user__profile__phone_number=_User0.phone_number)
+        assert(len(rs) == 1)
+
+        rs2 = GCMRegistrationId.objects.filter(gcm_registration_id=_User0.gcm_registration_id)
+        assert(len(rs2) == 1)
+        self.assertEqual(rs2[0].user.username, _User0.username)
+
+        res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
+            'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': _User0.gcm_registration_id})
+        self.assertEqual(res.status_code, 470)
 
     def test_generate_user_registration_message(self):
         pass

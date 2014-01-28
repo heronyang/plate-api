@@ -28,6 +28,8 @@ import keys
 from twilio.rest import TwilioRestClient
 from twilio import TwilioRestException
 
+from googl.short import GooglUrlShort
+
 import warnings
 
 warnings.filterwarnings('error', 'DateTimeField')
@@ -422,6 +424,7 @@ class Profile(models.Model):
             password = h.encode(raw_password, h.salt())
 
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
+
         ur = UserRegistration(code=code, user=self.user, password=password, ctime=timezone.now())
         ur.save()
 
@@ -437,7 +440,8 @@ class Profile(models.Model):
 
         # FIXME: generate URL
         url = url_prefix + reverse('activate') + '?c=' + code.hex
-        message = RESISTER_WELCOME_MESSAGE + url
+        surl = GooglUrlShort(url).short()
+        message = RESISTER_WELCOME_MESSAGE + surl
         return message
 
     def free_to_order(self):
@@ -641,6 +645,3 @@ class UserRegistration(models.Model):
         user = self.user
         user.is_active = True
         user.save()
-
-        # FIXME: DevicePassword
-
