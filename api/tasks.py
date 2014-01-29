@@ -58,9 +58,6 @@ def gcm_send(self, msg, retry_count=0):
         # retry the whole message.
         logger.error('GCM: Exception: ' + traceback.format_exc())
 
-@shared_task()
-def abandon(order_id):
-    o = Order.objects.get(pk=order_id)
-    if o.status == ORDER_STATUS_FINISHED:
-        o.status = ORDER_STATUS_ABANDONED
-        o.save()
+@shared_task
+def order_status_daily_cleanup():
+    Order.daily_cleanup()

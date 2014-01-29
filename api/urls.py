@@ -5,7 +5,7 @@ from api import views
 urlpatterns = patterns('',
 
     url(r'^1/register$', views.register, name='register'),
-    url(r'^1/activate$', views.activate, name='activate'),
+    url(r'^1/a$', views.activate, name='activate'), # activate, but short for SMS text
     url(r'^1/login$', views.login, name='login'),
 
     # app
@@ -15,12 +15,17 @@ urlpatterns = patterns('',
     url(r'^1/order_get$', views.order_get, name='order_get'),
     url(r'^1/order_post$', views.order_post, name='order_post'),
     url(r'^1/current_ns$', views.current_ns, name='current_ns'),
+    url(r'^1/current_cooking_orders$', views.current_cooking_orders, name='current_cooking_orders'),
 
     # vendor
     url(r'^1/order_vendor$', views.order_vendor, name='order_vendor'),
     url(r'^1/finish$', views.finish, name='finish'),
-    url(r'^1/pick$', views.pick, name='pick'),
+    url(r'^1/pickup$', views.pickup, name='pickup'),
     url(r'^1/cancel$', views.cancel, name='cancel'),
+    url(r'^1/set_busy$', views.set_busy, name='set_busy'),
+    url(r'^1/set_not_busy$', views.set_not_busy, name='set_not_busy'),
+    url(r'^1/restaurant_status$', views.restaurant_status, name='restaurant_status'),
+    url(r'^1/closed_reason$', views.closed_reason, name='closed_reason'),
     url(r'^1/vendor_list$', views.vendor_list, name='vendor_list'),
 
     # not included in MVP

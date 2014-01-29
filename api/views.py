@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import json
+import datetime
 
 from django.http import HttpResponse
 from django.contrib.auth import authenticate
@@ -11,11 +14,16 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 import django.views.generic.base
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
+from django.utils import timezone
+from django.template.response import TemplateResponse
+from const import Configs
 import re
 
 from jsonate import jsonate
 
 from api.models import *
+
+UNIT_TEST_PHONE_NUMBER = None
 
 CONTENT_TYPE_JSON = 'application/json'
 CONTENT_TYPE_TEXT = 'text/plain'
@@ -56,6 +64,7 @@ def register(request):
         res.status_code = 400
         return res
 
+    #
     if (not phone_number) or (not gcm_registration_id):
         res.status_code = 400   # wrong input
         return res
@@ -77,6 +86,29 @@ def register(request):
 
     (profile, profile_created) = Profile.get_or_create(phone_number=phone_number, role='user')
 
+    # avoid mutliple registration in MINUTES_LOCK_BETWEEN_REGISTRATIONS
+    u = profile.user
+    try:
+        lr = LastRegistrationTime.objects.get(user=u)
+    except (LastRegistrationTime.DoesNotExist, LastRegistrationTime.MultipleObjectsReturned), err:
+        lr = None
+    if lr:
+        now = timezone.now()
+        last = lr.last_time
+        d = datetime.timedelta(minutes=Configs.MINUTES_LOCK_BETWEEN_REGISTRATIONS)
+        if now < (last + d):
+            res.content = "just registered before, retry again later"
+            error_msg = "已經註冊，若無收到簡訊，請在" + str(Configs.MINUTES_LOCK_BETWEEN_REGISTRATIONS) + "分鐘後再嘗試"
+            res.content = jsonate({'error_msg':error_msg})
+            res.status_code = 470
+            return res
+        lr.last_time = timezone.now()
+        lr.save()
+    else:
+        new_lr = LastRegistrationTime(user=u, last_time = timezone.now())
+        new_lr.save()
+
+    #
     url_prefix = request.build_absolute_uri()[:-len(request.get_full_path())]
     wsgi_mount_point = request.path[:-len(request.path_info)]
     if wsgi_mount_point:
@@ -84,8 +116,23 @@ def register(request):
 
     m = profile.add_user_registration(url_prefix, password=password, gcm_registration_id=gcm_registration_id)
     c = Configuration.get0()
+
+    # send SMS here
     if not c.unit_test_mode:
-        profile.__send_verification_message(m)
+        (sms_is_send, sms_error_code) = profile.send_verification_message(m, phone_number)
+    else:
+        if not UNIT_TEST_PHONE_NUMBER:
+            (sms_is_send, sms_error_code) = (True, None)
+            pass
+        elif UNIT_TEST_PHONE_NUMBER == "register":
+            (sms_is_send, sms_error_code) = profile.send_verification_message(m, phone_number)
+        else:
+            (sms_is_send, sms_error_code) = profile.send_verification_message(m, UNIT_TEST_PHONE_NUMBER)
+
+    if not sms_is_send:
+        # FIXME: error handler here, just drop now
+        pass
+    #
 
     res.status_code = 200
     return res
@@ -96,7 +143,7 @@ def activate(request):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
 
     #FIXME: check if the record is clicked
-    code = request.GET['code']
+    code = request.GET['c']
     try:
         ur = UserRegistration.objects.get(code=code)
     except UserRegistration.DoesNotExist:
@@ -114,8 +161,12 @@ def activate(request):
             res.content = e.args[0]
             return res
 
+        content = """<!DOCTYPE html> <html> <head> <title>Congratulations!</title> <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script> </head> <body> <h3>Welcome to Plate!!</h3> <p>Succeed!</p> <p>leave this page in <span id="remain_seconds">5</span> seconds</p> <script> var count = 4; var countdown = setInterval(function(){ $("#remain_seconds").html(count + ""); if (count == 0) { clearInterval(countdown); window.open('http://plate.tw', "_self"); } count--; }, 1000); </script> </body> </html>"""
+        res = HttpResponse(content)
         res.status_code = 200
-        res.content = 'Success!'
+        return res
+
+    res.status_code = 400
     return res
 
 @csrf_exempt
@@ -179,6 +230,7 @@ def order_post(request):
         res.status_code = 400
         return res
 
+    # FIXME: move business logic to Model classes
     # check if all meals are from the same restaurant
     m = order_data[0]['meal_id']
     rest = Meal.objects.get(pk=m).restaurant
@@ -189,6 +241,41 @@ def order_post(request):
             res.content = "must be in the same restaurant"
             res.status_code = 400
             return res
+
+    # check if the total amount is over our limitation
+    total_price = 0
+    for i in order_data:
+        (meal_key, amount) = (i['meal_id'], i['amount'])
+        meal = Meal.objects.get(pk=meal_key)
+        total_price += (meal.price * amount)
+    if total_price > Configs.MAX_TOTAL_PRICE_PER_ORDER:
+        error_msg = "總價錢不得超過" + str(Configs.MAX_TOTAL_PRICE_PER_ORDER) + "元"
+        res.content = jsonate({'error_msg':error_msg})
+        res.status_code = 461
+        return res
+
+    if user.profile.failure >= Configs.MAX_ACCEPTABLE_FAILURE:
+        error_msg = "您已經有" + str(Configs.MAX_ACCEPTABLE_FAILURE) + "次以上的訂單失敗記錄，不得再領餐。 洽plate-service@googlegroups.com"
+        res.content = jsonate({'error_msg':error_msg})
+        res.status_code = 462
+        return res
+
+    if not Configs.ALLOW_MULTIPLE_OUTSTANDING_ORDERS:
+        profile = Profile.objects.get(user=user)
+        if not profile.free_to_order():
+            error_msg = "您有尚未完成的訂單，同時間只能進行一份訂單"
+            res.content = jsonate({'error_msg':error_msg})
+            res.status_code = 463
+            return res
+
+    if not rest.is_open:
+        if rest.closed_reason is None:
+            error_msg = ''
+        else:
+            error_msg = rest.closed_reason.msg
+        res.content = jsonate({'error_msg':error_msg})
+        res.status_code = 464
+        return res
 
     # FIXME: does it make more sense to implement 'order_create' at Restuarant?
     i = order_data[0]
@@ -223,7 +310,7 @@ def order_get(request):
 
     # last_order
     r_d = dict(name = last_order.restaurant.name,
-               location = last_order.restaurant.location,
+               location = last_order.restaurant.location.id,
                rest_id = last_order.restaurant.id)
     l_d = dict(ctime = last_order.ctime,
                mtime = last_order.mtime,
@@ -367,6 +454,24 @@ def current_ns(require):
 
 @csrf_exempt
 @require_GET
+def current_cooking_orders(require):
+    res = HttpResponse(content_type=CONTENT_TYPE_JSON)
+
+    try:
+        rest_id = require.GET['rest_id']
+    except MultiValueDictKeyError:
+        res.status_code = 400
+        return res
+
+    r = Restaurant.objects.get(pk=rest_id)
+    n = r.current_cooking_orders()
+
+    res.status_code = 200
+    res.content = jsonate({'current_cooking_orders': n})
+    return res
+
+@csrf_exempt
+@require_GET
 def restaurants(request):
     res = HttpResponse(content_type=CONTENT_TYPE_JSON)
     try:
@@ -420,6 +525,15 @@ def order_vendor(request):
         row['order_items'] = oi_packed
         r.append(row)
 
+    # update vendor last request
+    try:
+        vl = VendorLastRequestTime.objects.get(restaurant=restaurant)
+        vl.last_time = timezone.now()
+        vl.save()
+    except VendorLastRequestTime.DoesNotExist:
+        vl = VendorLastRequestTime(restaurant=restaurant, last_time=timezone.now())
+        vl.save()
+
     res.status_code = 200
     res.content = jsonate(dict(orders=r))
     return res
@@ -464,7 +578,7 @@ def finish(request):
 @require_POST
 @login_required
 @user_passes_test(is_vendor)
-def pick(request):
+def pickup(request):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
     vendor = request.user
 
@@ -487,7 +601,7 @@ def pick(request):
         return res
 
     # success
-    r = o.pick()
+    r = o.pickup()
     if not r:
         res.content = "not able change to finish state from this state"
         res.status_code = 406   # Not Acceptable
@@ -530,6 +644,122 @@ def cancel(request):
 
     res.status_code = 200
     return res
+
+@csrf_exempt
+@require_POST
+@login_required
+@user_passes_test(is_vendor)
+def set_busy(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    r = vendor.profile.restaurant
+    r.set_busy()
+
+    res.status_code = 200
+    return res
+
+@csrf_exempt
+@require_POST
+@login_required
+@user_passes_test(is_vendor)
+def set_not_busy(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    r = vendor.profile.restaurant
+    r.set_not_busy()
+
+    res.status_code = 200
+    return res
+
+@csrf_exempt
+@login_required
+@user_passes_test(is_vendor)
+def restaurant_status(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    r = vendor.profile.restaurant
+
+    if request.method == 'GET':
+
+        if r.closed_reason is None:
+            msg = ''
+        else:
+            msg = r.closed_reason.msg
+
+        res.status_code = 200
+        res.content = jsonate({'status':r.status,
+                               'is_open':r.is_open,
+                               'closed_reason':msg})
+
+        return res
+
+    if request.method == 'POST':
+        try:
+            status = request.POST['status']
+        except MultiValueDictKeyError:
+            res.content = "wrong input"
+            res.status_code = 400
+            return res
+
+        r.status_set(status)
+        res.status_code = 200
+
+        return res
+
+@csrf_exempt
+@login_required
+@user_passes_test(is_vendor)
+def closed_reason(request):
+    res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
+    vendor = request.user
+
+    if not vendor.is_authenticated():
+        res.status_code = 401
+        return res
+
+    r = vendor.profile.restaurant
+
+    if request.method == 'GET':
+
+        crs = ClosedReason.objects.all()
+
+        res.status_code = 200
+        res.content = jsonate({'closed_reasons':crs})
+
+        return res
+
+    if request.method == 'POST':
+        try:
+            cr = request.POST['closed_reason']
+        except MultiValueDictKeyError:
+            res.content = "wrong input"
+            res.status_code = 400
+            return res
+
+        try:
+            r.closed_reason_set(cr)
+        except ClosedReason.DoesNotExist:
+            res.content = "not such closed reason"
+            res.status_code = 422
+            return res
+
+        res.status_code = 200
+        return res
 
 ###
 
@@ -590,7 +820,17 @@ def old_restaurants(request):
 
     l = []
     for i in rs :
-        l.append(dict(name=i.name, location=i.location, rest_id=i.id))
+        if i.closed_reason is None:
+            msg = ''
+        else:
+            msg = i.closed_reason.msg
+
+        l.append(dict(name=i.name,
+                      location=i.location.id,
+                      rest_id=i.id,
+                      is_open=i.is_open,
+                      closed_reason=msg,
+                      description=i.description))
     out['list'] = l
     res.content = json.dumps(out)
     res.status_code = 200

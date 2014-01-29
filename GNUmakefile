@@ -31,7 +31,7 @@ dbschemachange:
 	for i in $(DJANGO_APPS); do \
 		./manage.py migrate $$i; \
 	done
-	./manage.py dumpdata --indent=3 api > plate-test.json
+	./manage.py dumpdata --natural --indent=3 api > plate-test.json
 
 .PHONY: dbdestroy
 dbdestroy:
@@ -40,3 +40,12 @@ dbdestroy:
 .PHONY: shell
 shell:
 	bash
+
+.PHONY: deps-install deps-install-system
+# install dependencies only for the current user
+deps-install:
+	pip install --user -r pip-requirements.txt
+
+# install dependencies into system directories for all users
+deps-install-system:
+	pip install -r pip-requirements.txt

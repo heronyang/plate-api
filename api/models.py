@@ -4,12 +4,15 @@ import uuid
 import re
 import logging
 import json
+import datetime
 import urllib2
+import pytz
 
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.utils.timezone import is_naive as datetime_is_naive
 from uuidfield import UUIDField
 from django.contrib.auth.models import User, Group
 from const import Urls
@@ -17,29 +20,65 @@ from django.core.urlresolvers import reverse
 from django.db.utils import IntegrityError
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from gcmclient import *
+from const import Configs
+from timezone_field import TimeZoneField
 import tasks
+import keys
+
+from twilio.rest import TwilioRestClient
+from twilio import TwilioRestException
+
+from googl.short import GooglUrlShort
+
+import warnings
+
+warnings.filterwarnings('error', 'DateTimeField')
 
 logger = logging.getLogger(__name__)
 
-TIMEOUT_FOR_ADANDONED = (10 * 60)   # sec
+TIMEOUT_FOR_ADANDONED = (15 * 60)   # sec
+
+# TWILIO SMS ACCOUNT
+TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
+TWILIO_AUTH_TOKEN = keys.TWILIO_AUTH_TOKEN
+TWILIO_PHONE_NUMBER = '+12409794102'
+
+RESISTER_WELCOME_MESSAGE = u"PLATE帳號啓用: "
 
 RESTAURANT_NAME_MAX = 33
+LOCATION_NAME_MAX = 200
 MEAL_NAME_MAX = 85
 MEALCATEGORY_NAME_MAX = 85
 COMMENT_MAX = 200
 PASSWORD_MAX = 128
 GCM_REGISTRATION_ID_MAX = 600
 
-(ORDER_STATUS_INIT_COOKING,
- ORDER_STATUS_FINISHED,
- ORDER_STATUS_PICKED_UP,
- ORDER_STATUS_REJECTED,
- ORDER_STATUS_ABANDONED,
- ORDER_STATUS_RESCUED) = range(6)
+(RESTAURANT_STATUS_FOLLOW_OPEN_RULES,
+ RESTAURANT_STATUS_MANUAL_OPEN,
+ RESTAURANT_STATUS_MANUAL_CLOSE,
+ RESTAURANT_STATUS_UNLISTED,
+ ) = range(4)
+
+(RESTAURANT_CLOSED_NEVER,
+ RESTAURANT_CLOSED_EVERY_WEEKEND,
+ RESTAURANT_CLOSED_EVERY_OTHER_WEEKEND,
+ ) = range(3)
+
+(ORDER_STATUS_INIT_COOKING, # order-incomplete
+ ORDER_STATUS_FINISHED,     # order-incomplete
+ ORDER_STATUS_PICKED_UP,    # order-complete
+ ORDER_STATUS_REJECTED,     # order-complete
+ ORDER_STATUS_ABANDONED,    # order-complete
+ ORDER_STATUS_RESCUED,      # order-complete
+ ORDER_STATUS_DROPPED       # order-complete
+ ) = range(7)
+
+
+def remove_incomplete_order():
+    tasks.remove_incomplete_order.apply_async()
 
 def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
     # Construct (key => scalar) payload. do not use nested structures.
-    #data = {'str': 'string', 'int': 10}
     data = {"title":title, "message":message, "ticker":ticker, }
 
     # Unicast or multicast message, read GCM manual about extra options.
@@ -69,6 +108,10 @@ class Configuration(models.Model):
     def get0(cls):
         return cls.objects.get(pk=1)
 
+class LastRegistrationTime(models.Model):
+    user = models.ForeignKey(get_user_model())
+    last_time = models.DateTimeField()
+
 def db_init(unit_test_mode=True):
     (vendor_group, vendor_group_created) = Group.objects.get_or_create(name='vendor')
     if vendor_group_created:
@@ -80,10 +123,30 @@ def db_init(unit_test_mode=True):
     c = Configuration(unit_test_mode=unit_test_mode)
     c.save()
 
+class ClosedReason(models.Model):
+    msg = models.TextField(blank=True)
+
+    @staticmethod
+    def create_defaults():
+        ClosedReason(msg='非營業時間').save()
+        ClosedReason(msg='商家忙碌中').save()
+        ClosedReason(msg='提早關門').save()
+        ClosedReason(msg='特殊休假').save()
+
+    def __unicode__(self):
+        return self.msg
+
+class Location(models.Model):
+    name = models.CharField(max_length=LOCATION_NAME_MAX)
+    timezone = TimeZoneField()
+
+    def __unicode__(self):
+        return self.name
+
 class Restaurant(models.Model):
     name = models.CharField(max_length=RESTAURANT_NAME_MAX)
     pic_url = models.URLField(blank=True)
-    location = models.IntegerField(default=0) # Enum like
+    location = models.ForeignKey(Location)
     status = models.IntegerField(default=0) # Enum like
 
     # increase 1 when 1 order is added, no need to reset this field
@@ -92,6 +155,14 @@ class Restaurant(models.Model):
     # last number of the continous number slips
     current_number_slip = models.IntegerField(default=0) # the last continous number slip
     capacity = models.IntegerField(default=99)
+
+    #
+    closed_reason = models.ForeignKey(ClosedReason, null=True)
+    closed_rule = models.IntegerField(default=0)    #Enum like
+    closed_every_other_weekend_initial_closed_weekend_sat = models.DateField(default=datetime.date(2014, 1, 4), null=True)
+
+    #
+    description = models.TextField(blank=True) # extra info for the recommendation
 
     def new_number_slip(self):
         self.number_slip += 1
@@ -108,28 +179,31 @@ class Restaurant(models.Model):
     pic_tag.allow_tags = True
 
     # map the location to the real name
+    # not using
     def location_name(self):
         location_names = ["其他", "女二餐", "第二餐廳", "第一餐廳"]
         if len(location_names) > self.location:
             return location_names[self.location]
         return location_names[0]
 
+    def prior_notification(self):
+        prior_ns = self.current_number_slip + Configs.PRIOR_NUMBER_SLIPS
+        os = Order.objects.filter(restaurant=self)
+        for o in os:
+            if o.pos_slip_number == prior_ns:
+                p = o.user.profile
+                p.send_notification(caller='prior_notification', method='gcm')
+
     #
     def update_current_number_slip(self, pos_slip_number):
-        new_ns = pos_slip_number
-
-        if (self.current_number_slip+1) == new_ns:
-            self.current_number_slip = new_ns
-            self.save()
 
         os = Order.objects.filter(restaurant=self)
-
         if not os:
-            raise TypeError
+            return
 
-        cur_ns = new_ns
+        cur_ns = self.current_number_slip
 
-        # FIXME: poor code here (heron), inefficieny
+        # FIXME: use Order.objects.filter(restaurant=self && pos_slip_number=(cur_ns+1)) instead
         while True:
             updated = False
             for i in os:
@@ -143,8 +217,120 @@ class Restaurant(models.Model):
             if not updated:
                 break
 
+        self.prior_notification()
+    #
+    def current_cooking_orders(self):
+        os = Order.objects.filter(restaurant=self)
+        n = 0
+        for i in os:
+            if i.status == ORDER_STATUS_INIT_COOKING:
+                n += 1
+        return n
+
+    def status_set(self, status):
+        if status == RESTAURANT_STATUS_FOLLOW_OPEN_RULES:
+            self.closed_reason = ClosedReason.objects.get(pk=1)
+
+        self.status = status
+        self.save()
+
+    def closed_reason_set(self, closed_reason):
+        cr = ClosedReason.objects.get(pk=closed_reason)
+        self.closed_reason = cr
+        self.save()
+
+    @property
+    def closed_reason_msg(self):
+        return self.closed_reason.msg
+
+    def is_open_on(self, dtime):
+        if self.status != RESTAURANT_STATUS_FOLLOW_OPEN_RULES:
+            if self.status == RESTAURANT_STATUS_MANUAL_OPEN:
+                return True
+            else:
+                return False
+
+        location_tz = self.location.timezone
+        if datetime_is_naive(dtime):
+            dtime = dtime.replace(tzinfo=location_tz)
+
+        if is_closed_on_rule(dtime.date(), self.closed_rule, self.closed_every_other_weekend_initial_closed_weekend_sat):
+            return False
+
+        holidays = RestaurantHoliday.objects.filter(restaurant=self)
+        for h in holidays:
+            if h.closed_date == dtime.date():
+                return False
+
+        ohs = RestaurantOpenHours.objects.filter(restaurant=self)
+        if not ohs:
+            # empty open hours list indicates 24 hr restaurants, e.g. 7-11
+            return True
+
+        for oh in ohs:
+            (s, e) = (oh.start.replace(tzinfo=location_tz), oh.end.replace(tzinfo=location_tz))
+            if dtime.time() >= s and dtime.time() <= e:
+                return True
+
+        return False
+
+    @property
+    def is_open(self):
+        return self.is_open_on(timezone.now())
+
+    def set_open_hours_for_test(self, open_hours):
+        RestaurantOpenHours.objects.filter(restaurant=self).delete()
+        for oh in open_hours:
+            (s, e) = oh
+            # Storing as timezone naive (i.e. non timezone aware) time objects for SQLite
+            # Will convert to timezone aware times in 'Restaurant.is_open'
+            start = datetime.time(s / 100, s % 100)
+            end = datetime.time(e / 100, e % 100)
+            roh = RestaurantOpenHours(restaurant=self, start=start, end=end)
+            roh.save()
+
+    def set_scheduled_holidays_for_test(self, holidays):
+        RestaurantHoliday.objects.filter(restaurant=self).delete()
+        location_tz = self.location.timezone
+        for i in holidays:
+            RestaurantHoliday(restaurant=self, closed_date=i).save()
+
     def __unicode__(self):
         return self.name
+
+class VendorLastRequestTime(models.Model):
+    restaurant = models.ForeignKey(Restaurant)
+    last_time = models.DateTimeField()
+
+class RestaurantOpenHours(models.Model):
+    restaurant = models.ForeignKey(Restaurant)
+    start = models.TimeField()
+    end = models.TimeField()
+
+class RestaurantHoliday(models.Model):
+    restaurant = models.ForeignKey(Restaurant)
+    closed_date = models.DateField()
+
+def is_weekend(date):
+    return date.isoweekday() in [6, 7]
+
+def is_closed_on_rule(date, closed_rule, init_closed_weekend):
+    if closed_rule == RESTAURANT_CLOSED_EVERY_WEEKEND:
+        return is_weekend(date)
+    elif closed_rule == RESTAURANT_CLOSED_EVERY_OTHER_WEEKEND:
+        if not is_weekend(date):
+            return False
+
+        day1 = (date - datetime.timedelta(days=date.weekday()))
+        day2 = (init_closed_weekend - datetime.timedelta(days=init_closed_weekend.weekday()))
+        weeks = (day2 - day1).days / 7
+
+        if (weeks % 2) == 0:
+            return True
+        else:
+            return False
+
+    return False
 
 class Profile(models.Model):
     # additional info keyed on User
@@ -153,6 +339,7 @@ class Profile(models.Model):
     pic_url = models.URLField(blank=True)
     ctime = models.DateTimeField(auto_now_add=True)
 
+    failure = models.IntegerField(default=0)
     # for users in vendor group
     restaurant = models.ForeignKey(Restaurant, null=True)
 
@@ -192,6 +379,21 @@ class Profile(models.Model):
             message = '抱歉老闆因故無法完成訂單！'
             ticker = message
             collapse_key = 'order_canceled'
+        elif caller is 'pickup':
+            title = '已領餐'
+            message = '餐點已經順利領取，感謝使用Plate點餐系統'
+            ticker = message
+            collapse_key = 'order_pickuped'
+        elif caller is 'failure':
+            title = '未領餐'
+            message = '嗨，很可惜您今天沒有領餐，將計上一次失敗記錄，第二次失敗便不能再點餐'
+            ticker = message
+            collapse_key = 'order_failure'
+        elif caller is 'prior_notification':
+            title = '快好了'
+            message = '快輪到您領餐了！'
+            ticker = message
+            collapse_key = 'prior_notification'
         else:
             raise TypeError()
 
@@ -210,7 +412,6 @@ class Profile(models.Model):
         else:
             raise TypeError()
 
-
     def add_user_registration(self, url_prefix, gcm_registration_id, password=None, raw_password=None):
         if (password is None) and (raw_password is None):
             raise TypeError()
@@ -223,21 +424,46 @@ class Profile(models.Model):
             password = h.encode(raw_password, h.salt())
 
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
+
         ur = UserRegistration(code=code, user=self.user, password=password, ctime=timezone.now())
         ur.save()
 
         # avoid duplication
-        if not GCMRegistrationId.objects.filter(gcm_registration_id=gcm_registration_id):
+        gs = GCMRegistrationId.objects.filter(gcm_registration_id=gcm_registration_id)
+        is_exist = False
+        for g in gs:
+            if g.user == self.user:
+                is_exist = True
+        if not is_exist:
             gr = GCMRegistrationId(user=self.user, gcm_registration_id=gcm_registration_id)
             gr.save()
 
         # FIXME: generate URL
-        url = url_prefix + reverse('activate') + '?code=' + code.hex
-        message = '歡迎加入Plate點餐的行列，點選一下連結以啟動帳號！ ' + url
+        url = url_prefix + reverse('activate') + '?c=' + code.hex
+        surl = GooglUrlShort(url).short()
+        message = RESISTER_WELCOME_MESSAGE + surl
         return message
 
-    def __send_verification_message(self, msg):
-        assert(0)
+    def free_to_order(self):
+        orders = Order.objects.filter(user=self.user)
+        for i in orders:
+            if i.status == ORDER_STATUS_FINISHED or i.status == ORDER_STATUS_INIT_COOKING:
+                return False
+        return True
+
+    def send_verification_message(self, msg, phone_number):
+        international_phone_number = "+886" + phone_number[1:] # 09xx... => +8869xx...
+        client = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+        try:
+            sms = client.sms.messages.create(body=msg,
+                                             to=international_phone_number,
+                                             from_=TWILIO_PHONE_NUMBER)
+        except TwilioRestException as Ex:
+            return (False, Ex.code)
+        else:
+            return (True, None)
+        # assert(0)
 
     def __unicode__(self):
         return self.phone_number
@@ -329,23 +555,29 @@ class Order(models.Model):
         p.send_notification(caller='finish', method='gcm')
 
         # turn the order to abandon in (TIMEOUT_FOR_ADANDONED) seconds
-        # if the user does not 'pick' during this period
-        tasks.abandon.apply_async((self.id,), countdown=TIMEOUT_FOR_ADANDONED)
+        # if the user does not 'pickup' during this period
+        # NOTE: this function is turned off for MVP
+        #tasks.abandon.apply_async((self.id,), countdown=TIMEOUT_FOR_ADANDONED)
 
         # update restaurant current_number_slip
         self.restaurant.update_current_number_slip(self.pos_slip_number)
 
         return True
 
-    def pick(self):
+    def pickup(self):
         if self.status == ORDER_STATUS_FINISHED:
             self.status = ORDER_STATUS_PICKED_UP
             self.save()
+            p = self.user.profile
+            p.send_notification(caller='pickup', method='gcm')
             return True
         if self.status == ORDER_STATUS_ABANDONED:
             self.status = ORDER_STATUS_RESCUED
             self.save()
+            p = self.user.profile
+            p.send_notification(caller='pickup', method='gcm')
             return True
+
         #
         return False
 
@@ -360,7 +592,27 @@ class Order(models.Model):
         p = self.user.profile
         p.send_notification(caller='cancel', method='gcm')
 
+        self.restaurant.update_current_number_slip(self.pos_slip_number)
         return True
+
+    @classmethod
+    def daily_cleanup(cls):
+        logger.info('Order.daily_cleanup: ' + str(timezone.now()))
+        os = Order.objects.all()
+        for o in os:
+            if o.status == ORDER_STATUS_FINISHED:
+                p = o.user.profile
+                p.failure += 1
+                p.save()
+
+                p.send_notification(caller='failure', method='gcm')
+                o.status = ORDER_STATUS_ABANDONED
+                o.save()
+
+            elif o.status == ORDER_STATUS_INIT_COOKING:
+                # no need for gcm here
+                o.status = ORDER_STATUS_DROPPED
+                o.save()
 
 
 class OrderItem(models.Model):
@@ -393,5 +645,3 @@ class UserRegistration(models.Model):
         user = self.user
         user.is_active = True
         user.save()
-
-        # FIXME: DevicePassword

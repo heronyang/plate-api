@@ -4,8 +4,6 @@ from __future__ import absolute_import
 import sys
 import os
 
-BROKER_URL = 'amqp://guest:guest@localhost//'
-
 PROJECT_DIR = os.path.dirname(__file__)
 
 DEBUG = False
@@ -36,7 +34,7 @@ ALLOWED_HOSTS = ['api.plate.tw']
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'Asia/Taipei'
+TIME_ZONE = 'UTC'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -134,6 +132,7 @@ INSTALLED_APPS = (
     'django.contrib.admindocs',
     'south',
     'djcelery',
+    'timezone_field',
     'api',
 )
 
@@ -170,6 +169,24 @@ AUTHENTICATION_BACKENDS = (
     'api.auth.PerDevicePasswordAuthBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
+
+BROKER_URL = 'amqp://guest:guest@localhost//'
+CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = [ 'pickle' ]
+CELERY_TASK_SERIALIZER = 'pickle'
+# enable 'pool_restart' command for reloading tasks
+CELERYD_POOL_RESTARTS = True
+
+from celery.schedules import crontab
+from datetime import timedelta
+
+CELERYBEAT_SCHEDULE = {
+    'order-status-daily-cleanup': {
+        'task': 'api.tasks.order_status_daily_cleanup',
+        'schedule': crontab(hour=16), # 24:00 GMT+8 == 16:00 GMT
+        'args': ()
+    },
+}
 
 try:
     from . import local_settings

@@ -9,3 +9,7 @@ media/*
 log/*
 local_settings.py
 plate.sqlite3
+tags
+celerybeat-schedule
+celerybeat.pid
+keys.py

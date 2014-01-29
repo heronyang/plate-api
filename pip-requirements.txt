@@ -6,3 +6,6 @@ south >=0.8,<0.9
 django-celery
 gcm-client
 flower
+django-timezone-field
+twilio ==3.6.4
+django-googl >=0.1.3
