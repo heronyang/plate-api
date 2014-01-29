@@ -386,12 +386,12 @@ class Profile(models.Model):
             collapse_key = 'order_pickuped'
         elif caller is 'failure':
             title = '未領餐'
-            message = '嗨，很可惜看來你今天沒有去領餐，將計上一筆失敗記錄，第二次失敗便不能再次點餐'
+            message = '嗨，很可惜您今天沒有領餐，將計上一次失敗記錄，第二次失敗便不能再點餐'
             ticker = message
             collapse_key = 'order_failure'
         elif caller is 'prior_notification':
             title = '快好了'
-            message = '快輪到你領餐了，要起身去拿餐了哦！不然會涼掉'
+            message = '快輪到您領餐了！'
             ticker = message
             collapse_key = 'prior_notification'
         else:
