@@ -89,6 +89,12 @@ class LastRegistrationTimeAdmin(admin.ModelAdmin):
 class VendorLastRequestTimeAdmin(admin.ModelAdmin):
     list_display = ('restaurant', 'last_time')
 
+class RestaurantHolidayAdmin(admin.ModelAdmin):
+    list_display = ('restaurant', 'closed_date')
+
+class RestaurantOpenHoursAdmin(admin.ModelAdmin):
+    list_display = ('restaurant', 'start', 'end')
+
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
 admin.site.register(Restaurant, RestaurantAdmin)
@@ -102,3 +108,5 @@ admin.site.register(Location, LocationAdmin)
 admin.site.register(ClosedReason, ClosedReasonAdmin)
 admin.site.register(VendorLastRequestTime, VendorLastRequestTimeAdmin)
 admin.site.register(LastRegistrationTime, LastRegistrationTimeAdmin)
+admin.site.register(RestaurantHoliday, RestaurantHolidayAdmin)
+admin.site.register(RestaurantOpenHours, RestaurantOpenHoursAdmin)
