@@ -15,6 +15,7 @@ import django.views.generic.base
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.template.response import TemplateResponse
 from const import Configs
 import re
 
@@ -160,8 +161,12 @@ def activate(request):
             res.content = e.args[0]
             return res
 
+        content = """<!DOCTYPE html> <html> <head> <title>Congratulations!</title> <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script> </head> <body> <h3>Welcome to Plate!!</h3> <p>Succeed!</p> <p>leave this page in <span id="remain_seconds">5</span> seconds</p> <script> var count = 4; var countdown = setInterval(function(){ $("#remain_seconds").html(count + ""); if (count == 0) { clearInterval(countdown); window.open('http://plate.tw', "_self"); } count--; }, 1000); </script> </body> </html>"""
+        res = HttpResponse(content)
         res.status_code = 200
-        res.content = 'Success!'
+        return res
+
+    res.status_code = 400
     return res
 
 @csrf_exempt
