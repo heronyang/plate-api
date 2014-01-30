@@ -1,0 +1,1410 @@
+[
+{
+   "pk": 1, 
+   "model": "api.closedreason", 
+   "fields": {
+      "msg": "\u975e\u71df\u696d\u6642\u9593"
+   }
+},
+{
+   "pk": 2, 
+   "model": "api.closedreason", 
+   "fields": {
+      "msg": "\u5fd9\u788c\u4e2d"
+   }
+},
+{
+   "pk": 1, 
+   "model": "api.location", 
+   "fields": {
+      "timezone": "Asia/Taipei", 
+      "name": "\u5973\u4e8c\u9910\u5ef3"
+   }
+},
+{
+   "pk": 2, 
+   "model": "api.location", 
+   "fields": {
+      "timezone": "Asia/Taipei", 
+      "name": "\u7b2c\u4e8c\u9910\u5ef3"
+   }
+},
+{
+   "pk": 3, 
+   "model": "api.location", 
+   "fields": {
+      "timezone": "Asia/Taipei", 
+      "name": "\u7b2c\u4e00\u9910\u5ef3"
+   }
+},
+{
+   "pk": 4, 
+   "model": "api.location", 
+   "fields": {
+      "timezone": "Asia/Taipei", 
+      "name": "\u5176\u4ed6"
+   }
+},
+{
+   "pk": 1, 
+   "model": "api.restaurant", 
+   "fields": {
+      "status": 0, 
+      "closed_every_other_weekend_initial_closed_weekend_sat": "2014-01-04", 
+      "capacity": 99, 
+      "name": "\u516b\u65b9\u96f2\u96c6", 
+      "closed_reason": 1, 
+      "description": "\u2022\u71df\u696d\u6642\u9593:\r\n  \u9031\u4e00\u81f3\u9031\u4e94\u4e0a\u534811:00~\u665a\u4e0a8:00\r\n\u2022\u6ce8\u610f\u4e8b\u9805:\r\n  \u7531\u65bc\u516b\u65b9\u96f2\u96c6\u51fa\u9910\u975e\u5e38\u5feb\u901f\uff0c\u56e0\u6b64\u7576\u60a8\u9001\u51fa\u8a02\u55ae\u5f8c\uff0c\u8001\u95c6\u6703\u5728\u300c\u77ed\u6642\u9593\u300d\u901a\u77e5\u53d6\u9910\u3002\r\n\u2022\u5099\u8a3b:\r\n1.\u82e5\u5546\u5bb6\u8a55\u4f30\u7cfb\u7d71\u8a02\u55ae\u8207\u73fe\u5834\u6392\u968a\u4eba\u6578\u8d85\u904e\u8ca0\u8377\uff0c\u6709\u6b0a\u66ab\u6642\u95dc\u9589\u7cfb\u7d71\u3002\r\n2.\u82e5\u60a8\u4e45\u672a\u53d6\u9910\u6216\u767c\u751f\u722d\u8b70\uff0c\u5546\u5bb6\u6709\u6b0a\u81f4\u96fb\u4e88\u60a8\u78ba\u8a8d\u3002", 
+      "pic_url": "", 
+      "closed_rule": 1, 
+      "location": 2, 
+      "current_number_slip": 0, 
+      "number_slip": 0
+   }
+},
+{
+   "pk": 2, 
+   "model": "api.restaurant", 
+   "fields": {
+      "status": 0, 
+      "closed_every_other_weekend_initial_closed_weekend_sat": "2014-01-04", 
+      "capacity": 99, 
+      "name": "Sunny\u7fa9\u5f0f\u5eda\u623f", 
+      "closed_reason": 1, 
+      "description": "\u2022\u71df\u696d\u6642\u9593\r\n  \u9031\u4e00\u81f3\u9031\u4e94\u4e0a\u534811:00~\u4e0b\u53481:30\u3001\u4e0b\u53484:30~\u665a\u4e0a7:30\r\n\u2022\u6ce8\u610f\u4e8b\u9805:\r\n  Sunny\u7fa9\u5f0f\u5eda\u623f\u5805\u6301\u6bcf\u9053\u83dc\u7684\u54c1\u8cea\uff0c\u6240\u4ee5\u7686\u70ba\u73fe\u9ede\u73fe\u505a\u3002\u8acb\u60a8\u6ce8\u610f\u81ea\u5df1\u7684\u865f\u78bc\u724c\u8207\u5546\u5bb6\u76ee\u524d\u53eb\u865f\uff0c\u4ee5\u9810\u4f30\u7b49\u5019\u6642\u9593\u3002\u53e6\u5916\uff0c\u82e5\u4e45\u672a\u53d6\u9910\uff0c\u5546\u5bb6\u5c07\u6703\u96fb\u8a71\u78ba\u8a8d\u3002\r\n\u2022\u5099\u8a3b:\r\n1.\u82e5\u5546\u5bb6\u8a55\u4f30\u7cfb\u7d71\u8a02\u55ae\u8207\u73fe\u5834\u6392\u968a\u4eba\u6578\u8d85\u904e\u8ca0\u8377\uff0c\u6709\u6b0a\u66ab\u6642\u95dc\u9589\u7cfb\u7d71\u3002\r\n2.\u82e5\u60a8\u4e45\u672a\u53d6\u9910\u6216\u767c\u751f\u722d\u8b70\uff0c\u5546\u5bb6\u6709\u6b0a\u81f4\u96fb\u4e88\u60a8\u78ba\u8a8d\u3002", 
+      "pic_url": "", 
+      "closed_rule": 1, 
+      "location": 2, 
+      "current_number_slip": 0, 
+      "number_slip": 0
+   }
+},
+{
+   "pk": 3, 
+   "model": "api.restaurant", 
+   "fields": {
+      "status": 0, 
+      "closed_every_other_weekend_initial_closed_weekend_sat": "2014-01-04", 
+      "capacity": 99, 
+      "name": "\u9eb5\u671d", 
+      "closed_reason": 1, 
+      "description": "\u2022\u71df\u696d\u6642\u9593\r\n  \u9031\u4e00\u81f3\u9031\u4e94\u65e9\u4e0a10:30~11:30\u3001\u4e2d\u534812:30~\u4e0b\u53485:00\u3001\u665a\u4e0a6:00~\u665a\u4e0a9:00\r\n\u2022\u6ce8\u610f\u4e8b\u9805:\r\n  \u4e0d\u63a5\u53d7\u8a02\u9910\u6642\u6bb5:\r\n  11:30~12:30\u82075:00~6:00\r\n  \u8a02\u9910\u6642\u9593:\r\n   A.11:00~11:30\u8a02\u9910 12:00\u7d71\u4e00\u53d6\u9910(\u6536\u5230\u9818\u9910\u901a\u77e5)\r\n   B.4:30~5:00\u8a02\u9910 5:20\u7d71\u4e00\u53d6\u9910(\u6536\u5230\u9818\u9910\u901a\u77e5)\r\n\u9664\u4e86\u8a02\u9910\u6642\u6bb5\uff0c\u5176\u9918\u6642\u6bb5\u7cfb\u7d71\u5c07\u7dad\u6301\u6b63\u5e38\u904b\u4f5c\uff0c\u4ea6\u5373\u7576\u60a8\u9001\u51fa\u8a02\u55ae\uff0c\u5546\u5bb6\u5c31\u6703\u958b\u59cb\u70f9\u716e\u9910\u9ede\uff0c\u716e\u597d\u6642\u96a8\u5373\u901a\u77e5\u60a8\u3002\r\n\u2022\u5099\u8a3b:\r\n1.\u82e5\u5546\u5bb6\u8a55\u4f30\u7cfb\u7d71\u8a02\u55ae\u8207\u73fe\u5834\u6392\u968a\u4eba\u6578\u8d85\u904e\u8ca0\u8377\uff0c\u6709\u6b0a\u66ab\u6642\u95dc\u9589\u7cfb\u7d71\u3002\r\n2.\u82e5\u60a8\u4e45\u672a\u53d6\u9910\u6216\u767c\u751f\u722d\u8b70\uff0c\u5546\u5bb6\u6709\u6b0a\u81f4\u96fb\u4e88\u60a8\u78ba\u8a8d\u3002", 
+      "pic_url": "", 
+      "closed_rule": 1, 
+      "location": 2, 
+      "current_number_slip": 0, 
+      "number_slip": 0
+   }
+},
+{
+   "pk": 4, 
+   "model": "api.restaurant", 
+   "fields": {
+      "status": 0, 
+      "closed_every_other_weekend_initial_closed_weekend_sat": "2014-01-04", 
+      "capacity": 99, 
+      "name": "\u7c73\u514b\uff31", 
+      "closed_reason": 1, 
+      "description": "\u2022\u71df\u696d\u6642\u9593\r\n  \u9031\u4e00\u81f3\u9031\u4e94\u65e9\u4e0a10:30~\u665a\u4e0a8:00\r\n\u2022\u6ce8\u610f\u4e8b\u9805:\r\n  \u7cfb\u7d71\u73fe\u968e\u6bb5\u958b\u653e21\u7a2e\u71b1\u9580\u98f2\u54c1\uff0c\u751c\u5ea6\u51b0\u584a\u9078\u9805\u7686\u70ba\u534a\u7cd6\u5c11\u51b0\uff0c\u7576\u60a8\u9001\u51fa\u8a02\u55ae\uff0c\u5546\u5bb6\u4fbf\u6703\u958b\u59cb\u88fd\u4f5c\uff0c\u8acb\u6ce8\u610f\u81ea\u5df1\u7684\u865f\u78bc\u724c\u8207\u76ee\u524d\u53eb\u865f\uff0c\u4ee5\u8861\u91cf\u81ea\u5df1\u662f\u5426\u80fd\u65bc\u901a\u77e5\u53d6\u9910\u6642\u524d\u5f80\u9818\u53d6\u3002\r\n\u2022\u5099\u8a3b:\r\n1.\u82e5\u5546\u5bb6\u8a55\u4f30\u7cfb\u7d71\u8a02\u55ae\u8207\u73fe\u5834\u6392\u968a\u4eba\u6578\u8d85\u904e\u8ca0\u8377\uff0c\u6709\u6b0a\u66ab\u6642\u95dc\u9589\u7cfb\u7d71\u3002\r\n2.\u82e5\u60a8\u4e45\u672a\u53d6\u9910\u6216\u767c\u751f\u722d\u8b70\uff0c\u5546\u5bb6\u6709\u6b0a\u81f4\u96fb\u4e88\u60a8\u78ba\u8a8d\u3002", 
+      "pic_url": "", 
+      "closed_rule": 1, 
+      "location": 2, 
+      "current_number_slip": 0, 
+      "number_slip": 0
+   }
+},
+{
+   "pk": 1, 
+   "model": "api.restaurantopenhours", 
+   "fields": {
+      "start": "11:00:00", 
+      "end": "20:00:00", 
+      "restaurant": 1
+   }
+},
+{
+   "pk": 2, 
+   "model": "api.restaurantopenhours", 
+   "fields": {
+      "start": "11:00:00", 
+      "end": "13:30:00", 
+      "restaurant": 2
+   }
+},
+{
+   "pk": 3, 
+   "model": "api.restaurantopenhours", 
+   "fields": {
+      "start": "16:30:00", 
+      "end": "19:30:00", 
+      "restaurant": 2
+   }
+},
+{
+   "pk": 4, 
+   "model": "api.restaurantopenhours", 
+   "fields": {
+      "start": "10:30:00", 
+      "end": "11:30:00", 
+      "restaurant": 3
+   }
+},
+{
+   "pk": 5, 
+   "model": "api.restaurantopenhours", 
+   "fields": {
+      "start": "12:30:00", 
+      "end": "17:00:00", 
+      "restaurant": 3
+   }
+},
+{
+   "pk": 6, 
+   "model": "api.restaurantopenhours", 
+   "fields": {
+      "start": "18:00:00", 
+      "end": "21:00:00", 
+      "restaurant": 3
+   }
+},
+{
+   "pk": 7, 
+   "model": "api.restaurantopenhours", 
+   "fields": {
+      "start": "10:30:00", 
+      "end": "20:00:00", 
+      "restaurant": 4
+   }
+},
+{
+   "pk": 1, 
+   "model": "api.profile", 
+   "fields": {
+      "phone_number": "v0919020781", 
+      "ctime": "2014-01-29T16:16:26Z", 
+      "restaurant": 1, 
+      "failure": 0, 
+      "user": [
+         "v1"
+      ], 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 2, 
+   "model": "api.profile", 
+   "fields": {
+      "phone_number": "v0933267353", 
+      "ctime": "2014-01-29T16:20:51Z", 
+      "restaurant": 2, 
+      "failure": 0, 
+      "user": [
+         "v2"
+      ], 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 3, 
+   "model": "api.profile", 
+   "fields": {
+      "phone_number": "v0915205322", 
+      "ctime": "2014-01-29T16:21:33Z", 
+      "restaurant": 3, 
+      "failure": 0, 
+      "user": [
+         "v3"
+      ], 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 4, 
+   "model": "api.profile", 
+   "fields": {
+      "phone_number": "v0963319911", 
+      "ctime": "2014-01-29T16:23:11Z", 
+      "restaurant": 4, 
+      "failure": 0, 
+      "user": [
+         "v4"
+      ], 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 1, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u934b\u8cbc\u5957\u9910"
+   }
+},
+{
+   "pk": 2, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u6c34\u9903\u5957\u9910"
+   }
+},
+{
+   "pk": 3, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u7fa9\u5927\u5229\u9eb5"
+   }
+},
+{
+   "pk": 4, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "pizza"
+   }
+},
+{
+   "pk": 5, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u9eb5\u5305"
+   }
+},
+{
+   "pk": 6, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u62cc\u9eb5"
+   }
+},
+{
+   "pk": 7, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u96f2\u541e\u9eb5"
+   }
+},
+{
+   "pk": 8, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u6e6f\u985e"
+   }
+},
+{
+   "pk": 9, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u55ae\u9ede\u9752\u83dc"
+   }
+},
+{
+   "pk": 10, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u539f\u5473\u8336\u98f2"
+   }
+},
+{
+   "pk": 11, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u9bae\u5976\u8336"
+   }
+},
+{
+   "pk": 12, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u51ac\u74dc\u98f2"
+   }
+},
+{
+   "pk": 13, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u8abf\u5976\u985e"
+   }
+},
+{
+   "pk": 14, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u9bae\u6ab8\u985e"
+   }
+},
+{
+   "pk": 15, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u990a\u6a02\u591a\u985e"
+   }
+},
+{
+   "pk": 16, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u98a8\u5473\u8336\u98f2"
+   }
+},
+{
+   "pk": 17, 
+   "model": "api.mealcategory", 
+   "fields": {
+      "name": "\u5b63\u7bc0\u679c\u6c41"
+   }
+},
+{
+   "pk": 1, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u934b\u8cbc(10)\uff0b\u7389\u7c73\u6fc3\u6e6f", 
+      "restaurant": 1, 
+      "price": 65, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 2, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u934b\u8cbc(10)\uff0b\u9178\u8fa3\u6e6f", 
+      "restaurant": 1, 
+      "price": 65, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 3, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u934b\u8cbc(10)\uff0b\u65d7\u9b5a\u82b1\u679d\u4e38\u6e6f", 
+      "restaurant": 1, 
+      "price": 65, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 4, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u934b\u8cbc(10)\uff0b\u7389\u7c73\u6fc3\u6e6f", 
+      "restaurant": 1, 
+      "price": 65, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 5, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u934b\u8cbc(10)\uff0b\u9178\u8fa3\u6e6f", 
+      "restaurant": 1, 
+      "price": 65, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 6, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u934b\u8cbc(10)\uff0b\u65d7\u9b5a\u82b1\u679d\u4e38\u6e6f", 
+      "restaurant": 1, 
+      "price": 65, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 7, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u934b\u8cbc(16)\uff0b\u7389\u7c73\u6fc3\u6e6f", 
+      "restaurant": 1, 
+      "price": 90, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 8, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u934b\u8cbc(16)\uff0b\u9178\u8fa3\u6e6f", 
+      "restaurant": 1, 
+      "price": 90, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 9, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u934b\u8cbc(16)\uff0b\u65d7\u9b5a\u82b1\u679d\u4e38\u6e6f", 
+      "restaurant": 1, 
+      "price": 90, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 10, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u934b\u8cbc(16)\uff0b\u7389\u7c73\u6fc3\u6e6f", 
+      "restaurant": 1, 
+      "price": 90, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 11, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u934b\u8cbc(16)\uff0b\u9178\u8fa3\u6e6f", 
+      "restaurant": 1, 
+      "price": 90, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 12, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u934b\u8cbc(16)\uff0b\u65d7\u9b5a\u82b1\u679d\u4e38\u6e6f", 
+      "restaurant": 1, 
+      "price": 90, 
+      "meal_category": 1, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 13, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u6c34\u9903(10)\uff0b\u7389\u7c73\u6fc3\u6e6f", 
+      "restaurant": 1, 
+      "price": 70, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 14, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u6c34\u9903(10)\uff0b\u9178\u8fa3\u6e6f", 
+      "restaurant": 1, 
+      "price": 70, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 15, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u6c34\u9903(10)\uff0b\u65d7\u9b5a\u82b1\u679d\u4e38\u6e6f", 
+      "restaurant": 1, 
+      "price": 70, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 16, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u6c34\u9903(10)\uff0b\u7389\u7c73\u6fc3\u6e6f", 
+      "restaurant": 1, 
+      "price": 70, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 17, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u6c34\u9903(10)\uff0b\u9178\u8fa3\u6e6f", 
+      "restaurant": 1, 
+      "price": 70, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 18, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u6c34\u9903(10)\uff0b\u65d7\u9b5a\u82b1\u679d\u4e38\u6e6f", 
+      "restaurant": 1, 
+      "price": 70, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 19, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u6c34\u9903(16)\uff0b\u7389\u7c73\u6fc3\u6e6f", 
+      "restaurant": 1, 
+      "price": 95, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 20, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u6c34\u9903(16)\uff0b\u9178\u8fa3\u6e6f", 
+      "restaurant": 1, 
+      "price": 95, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 21, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62db\u724c\u6c34\u9903(16)\uff0b\u65d7\u9b5a\u82b1\u679d\u4e38\u6e6f", 
+      "restaurant": 1, 
+      "price": 95, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 22, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u6c34\u9903(16)\uff0b\u7389\u7c73\u6fc3\u6e6f", 
+      "restaurant": 1, 
+      "price": 95, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 23, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u6c34\u9903(16)\uff0b\u9178\u8fa3\u6e6f", 
+      "restaurant": 1, 
+      "price": 95, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 24, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u97ed\u83dc\u6c34\u9903(16)\uff0b\u65d7\u9b5a\u82b1\u679d\u4e38\u6e6f", 
+      "restaurant": 1, 
+      "price": 95, 
+      "meal_category": 2, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 25, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u7fa9\u5927\u5229\u8089\u91ac\u9eb5(\u725b\u8089)", 
+      "restaurant": 2, 
+      "price": 99, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 26, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u5976\u6cb9\u86cb\u6c41\u96de\u8089\u57f9\u6839\u7fa9\u5927\u5229\u9eb5", 
+      "restaurant": 2, 
+      "price": 110, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 27, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u8089\u91ac\u9999\u8178\u7fa9\u5927\u5229\u9eb5(\u725b\u8089)", 
+      "restaurant": 2, 
+      "price": 120, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 28, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u8304\u6c41\u6d77\u9bae\u7fa9\u5927\u5229\u9eb5", 
+      "restaurant": 2, 
+      "price": 120, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 29, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9752\u91ac\u8766\u4ec1\u8606\u7b4d\u7fa9\u5927\u5229\u9eb5", 
+      "restaurant": 2, 
+      "price": 150, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 30, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9999\u849c\u8fa3\u6912\u6d77\u9bae\u7fa9\u5927\u5229\u9eb5", 
+      "restaurant": 2, 
+      "price": 130, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 31, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u8fa3\u5473\u71fb\u9d28\u80f8\u7fa9\u5927\u5229\u9eb5", 
+      "restaurant": 2, 
+      "price": 120, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 32, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u96de\u8089\u57f9\u6839\u8543\u8304\u7fa9\u5927\u5229\u9eb5", 
+      "restaurant": 2, 
+      "price": 120, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 33, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9999\u8349\u9bae\u83c7\u7fa9\u5927\u5229\u9eb5", 
+      "restaurant": 2, 
+      "price": 110, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 34, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u767d\u9152\u86e4\u870a\u7fa9\u5927\u5229\u9eb5", 
+      "restaurant": 2, 
+      "price": 130, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 35, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "SUNNY PIZZA(\u8766\u3001\u96de\u8089\u3001\u7159\u71fb\u706b\u817f\u3001\u9cf3\u68a8)", 
+      "restaurant": 2, 
+      "price": 150, 
+      "meal_category": 3, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 36, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "SEAFOOD PIZZA(\u58a8\u9b5a\u3001\u9baa\u9b5a\u3001\u8766\u3001\u849c\u3001\u4e5d\u5c64\u5854)", 
+      "restaurant": 2, 
+      "price": 140, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 37, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "LAND AND SEA FOOD(\u96de\u8089\u3001\u8766\u3001\u849c\u3001\u4e5d\u5c64\u5854)", 
+      "restaurant": 2, 
+      "price": 130, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 38, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "BACON PIZZA(\u57f9\u6839\u3001\u86cb\u3001\u6d0b\u8525)", 
+      "restaurant": 2, 
+      "price": 130, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 39, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "MEAT SAUCE PIZZA(\u8089\u91ac\u3001\u6d0b\u8525)", 
+      "restaurant": 2, 
+      "price": 125, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 40, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "HAWAIIAN PIZZA(\u7159\u71fb\u706b\u817f\u3001\u9cf3\u68a8)", 
+      "restaurant": 2, 
+      "price": 120, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 41, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "MIXED MUSHROOMS PIZZA(\u8611\u83c7\u3001\u9999\u83c7\u3001\u79c0\u73cd\u83c7)", 
+      "restaurant": 2, 
+      "price": 120, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 42, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "MARGHERITA PIZZA(\u8543\u8304\u91ac\u3001\u8d77\u53f8\u3001\u8543\u8304\u3001\u4e5d\u5c64\u5854)", 
+      "restaurant": 2, 
+      "price": 120, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 43, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u71fb\u9bad\u9b5a\u62ab\u85a9(\u7159\u71fb\u9bad\u9b5a\u3001\u9bf7\u9b5a\u3001\u9178\u8c46\u3001\u5c0f\u756a\u8304)", 
+      "restaurant": 2, 
+      "price": 150, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 44, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9baa\u9b5a\u62ab\u85a9(\u9baa\u9b5a\u3001\u6d0b\u8525\u3001\u9ed1\u6a44\u6b04)", 
+      "restaurant": 2, 
+      "price": 140, 
+      "meal_category": 4, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 45, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u624b\u5de5\u9eb5\u5305", 
+      "restaurant": 2, 
+      "price": 40, 
+      "meal_category": 5, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 46, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u6912\u9ebb\u96de\u7d72\u62cc\u9eb5(\u5c0f)", 
+      "restaurant": 3, 
+      "price": 50, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 47, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u6912\u9ebb\u96de\u7d72\u62cc\u9eb5(\u5927)", 
+      "restaurant": 3, 
+      "price": 60, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 48, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9752\u91ac\u96de\u7d72\u62cc\u9eb5(\u5c0f)", 
+      "restaurant": 3, 
+      "price": 50, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 49, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9752\u91ac\u96de\u7d72\u62cc\u9eb5(\u5927)", 
+      "restaurant": 3, 
+      "price": 60, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 50, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u6912\u9ebb\u96f2\u541e\u62cc\u9eb5(\u5c0f)", 
+      "restaurant": 3, 
+      "price": 60, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 51, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u6912\u9ebb\u96f2\u541e\u62cc\u9eb5(\u5927)", 
+      "restaurant": 3, 
+      "price": 70, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 52, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9752\u91ac\u96f2\u541e\u62cc\u9eb5(\u5c0f)", 
+      "restaurant": 3, 
+      "price": 70, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 53, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9752\u91ac\u96f2\u541e\u62cc\u9eb5(\u5927)", 
+      "restaurant": 3, 
+      "price": 80, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 54, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u67f4\u9b5a\u96f2\u541e\u62cc\u9eb5(\u5c0f)", 
+      "restaurant": 3, 
+      "price": 70, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 55, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u67f4\u9b5a\u96f2\u541e\u62cc\u9eb5(\u5927)", 
+      "restaurant": 3, 
+      "price": 80, 
+      "meal_category": 6, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 56, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u7f85\u5b8b\u725b\u8169\u96f2\u541e\u9eb5(\u5c0f)", 
+      "restaurant": 3, 
+      "price": 85, 
+      "meal_category": 7, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 57, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u7f85\u5b8b\u725b\u8169\u96f2\u541e\u9eb5(\u5927)", 
+      "restaurant": 3, 
+      "price": 95, 
+      "meal_category": 7, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 58, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u539f\u6c41\u725b\u8169\u96f2\u541e\u9eb5(\u5c0f)", 
+      "restaurant": 3, 
+      "price": 85, 
+      "meal_category": 7, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 59, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u539f\u6c41\u725b\u8169\u96f2\u541e\u9eb5(\u5927)", 
+      "restaurant": 3, 
+      "price": 95, 
+      "meal_category": 7, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 60, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u7f85\u5b8b\u725b\u8169\u6e6f", 
+      "restaurant": 3, 
+      "price": 50, 
+      "meal_category": 8, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 61, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u7f85\u5b8b\u852c\u83dc\u6e6f", 
+      "restaurant": 3, 
+      "price": 30, 
+      "meal_category": 8, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 62, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9bae\u8766\u96f2\u541e\u6e6f", 
+      "restaurant": 3, 
+      "price": 40, 
+      "meal_category": 8, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 63, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u9b5a\u4e38\u6e6f", 
+      "restaurant": 3, 
+      "price": 40, 
+      "meal_category": 8, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 64, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u8ca2\u4e38\u6e6f", 
+      "restaurant": 3, 
+      "price": 30, 
+      "meal_category": 8, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 65, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u991b\u98e9\u6e6f ", 
+      "restaurant": 3, 
+      "price": 30, 
+      "meal_category": 8, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 66, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u71d9\u9752\u83dc", 
+      "restaurant": 3, 
+      "price": 30, 
+      "meal_category": 9, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 67, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u8309\u9999\u7da0\u8336(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 20, 
+      "meal_category": 10, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 68, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62ff\u9435\u7d05\u8336(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 35, 
+      "meal_category": 11, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 69, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u62ff\u9435\u51ac\u74dc(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 35, 
+      "meal_category": 11, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 70, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u73cd\u73e0\u9bae\u5976\u8336(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 40, 
+      "meal_category": 11, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 71, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u4ed9\u8349\u9bae\u5976\u8336(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 40, 
+      "meal_category": 11, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 72, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u51ac\u74dc\u9752\u8336(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 20, 
+      "meal_category": 12, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 73, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u51ac\u74dc\u73cd\u73e0(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 25, 
+      "meal_category": 12, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 74, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u51ac\u74dc\u5e03\u4e01(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 12, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 75, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u51ac\u74dc\u6ab8\u6aac(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 12, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 76, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u963f\u83ef\u7530(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 13, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 77, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u5de7\u514b\u529b\u53ef\u53ef(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 13, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 78, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u73cd\u73e0\u5976\u8336(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 35, 
+      "meal_category": 13, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 79, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u4ed9\u8349\u5976\u51cd(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 35, 
+      "meal_category": 13, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 80, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u6ab8\u6aac\u7d05\u8336(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 14, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 81, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u91d1\u6854\u6ab8\u6aac(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 14, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 82, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u6ab8\u6aac\u611b\u7389(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 35, 
+      "meal_category": 14, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 83, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u6ab8\u6aac\u8606\u8588(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 35, 
+      "meal_category": 14, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 84, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u8702\u871c\u6ab8\u6aac(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 35, 
+      "meal_category": 14, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 85, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u591a\u591a\u7da0\u8336(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 15, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 86, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u767e\u9999\u591a\u591a(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 15, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 87, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u8702\u871c\u8606\u8588(\u534a\u7cd6\u5c11\u51b0)", 
+      "restaurant": 4, 
+      "price": 30, 
+      "meal_category": 16, 
+      "pic_url": ""
+   }
+},
+{
+   "pk": 89, 
+   "model": "api.meal", 
+   "fields": {
+      "status": 0, 
+      "name": "\u6728\u74dc\u725b\u5976", 
+      "restaurant": 4, 
+      "price": 40, 
+      "meal_category": 17, 
+      "pic_url": ""
+   }
+}
+]
