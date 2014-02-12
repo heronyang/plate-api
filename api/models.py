@@ -77,9 +77,9 @@ GCM_REGISTRATION_ID_MAX = 600
 def remove_incomplete_order():
     tasks.remove_incomplete_order.apply_async()
 
-def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
+def gcm_send(gcm_registration_ids, title, message, ticker, username, collapse_key):
     # Construct (key => scalar) payload. do not use nested structures.
-    data = {"title":title, "message":message, "ticker":ticker, }
+    data = {"title":title, "message":message, "ticker":ticker, "username":username}
 
     # Unicast or multicast message, read GCM manual about extra options.
     # It is probably a good idea to always use JSONMessage, even if you send
@@ -408,6 +408,7 @@ class Profile(models.Model):
                      title=title,
                      message=message,
                      ticker=ticker,
+                     username=user.username,
                      collapse_key=collapse_key)
         else:
             raise TypeError()
