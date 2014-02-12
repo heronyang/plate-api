@@ -408,7 +408,7 @@ class Profile(models.Model):
                      title=title,
                      message=message,
                      ticker=ticker,
-                     username=user.username,
+                     username=self.user.username,
                      collapse_key=collapse_key)
         else:
             raise TypeError()
