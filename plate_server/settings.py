@@ -10,10 +10,8 @@ DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    # ('Your Name', 'your_email@example.com'),
     ('PLATE Developers', 'dev-plate-tw@googlegroups.com'),
     ('Heron Yang', 'heron.yang.tw@gmail.com'),
-    ('Scott Tsai', 'scottt.tw@gmail.com'),
 )
 
 MANAGERS = ADMINS
