@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from api.models import *
+from pytz import timezone
 
 class ProfileInline(admin.StackedInline):
     model = Profile
@@ -23,9 +24,12 @@ class MyUserAdmin(UserAdmin):
 
 class RestaurantAdmin(admin.ModelAdmin):
     # FIXME: symbolic names for 'location'
-    list_display = ('name', 'pic_tag', 'location_name', 'number_slip', 'current_number_slip', 'status', 'description')
+    list_display = ('name', 'pic_tag', 'location', 'number_slip', 'current_number_slip', 'status', 'description')
     search_fields = ['name']
     list_filter = ['location']
+
+    def location(self):
+        return self.location.name
 
 class MealAdmin(admin.ModelAdmin):
     list_display = ('restaurant', 'name', 'price', 'status', 'pic_tag', 'pic_url', 'meal_category')
@@ -64,6 +68,12 @@ class MealRecommendationsAdmin(admin.ModelAdmin):
     search_fields = ['user__email', 'meal__name']
     list_filter = ['user']
 
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'timezone')
+
+class ClosedReasonAdmin(admin.ModelAdmin):
+    list_display = ('msg',)
+
 class UserRegistrationAdmin(admin.ModelAdmin):
     list_display = ('username', 'code', 'ctime', 'clicked')
 
@@ -72,6 +82,18 @@ class UserRegistrationAdmin(admin.ModelAdmin):
 
 class GCMRegistrationIdAdmin(admin.ModelAdmin):
     list_display = ('user', 'gcm_registration_id')
+
+class LastRegistrationTimeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'last_time')
+
+class VendorLastRequestTimeAdmin(admin.ModelAdmin):
+    list_display = ('restaurant', 'last_time')
+
+class RestaurantHolidayAdmin(admin.ModelAdmin):
+    list_display = ('restaurant', 'closed_date')
+
+class RestaurantOpenHoursAdmin(admin.ModelAdmin):
+    list_display = ('restaurant', 'start', 'end')
 
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
@@ -82,3 +104,9 @@ admin.site.register(MealRecommendation, MealRecommendationsAdmin)
 admin.site.register(UserRegistration, UserRegistrationAdmin)
 admin.site.register(MealCategory)
 admin.site.register(GCMRegistrationId, GCMRegistrationIdAdmin)
+admin.site.register(Location, LocationAdmin)
+admin.site.register(ClosedReason, ClosedReasonAdmin)
+admin.site.register(VendorLastRequestTime, VendorLastRequestTimeAdmin)
+admin.site.register(LastRegistrationTime, LastRegistrationTimeAdmin)
+admin.site.register(RestaurantHoliday, RestaurantHolidayAdmin)
+admin.site.register(RestaurantOpenHours, RestaurantOpenHoursAdmin)

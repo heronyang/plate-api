@@ -10,7 +10,8 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    # ('Your Name', 'your_email@example.com'),
+    ('PLATE Developers', 'dev-plate-tw@googlegroups.com'),
+    ('Heron Yang', 'heron.yang.tw@gmail.com'),
 )
 
 MANAGERS = ADMINS
@@ -28,7 +29,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.4/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['api.plate.tw']
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -172,8 +173,8 @@ AUTHENTICATION_BACKENDS = (
 
 BROKER_URL = 'amqp://guest:guest@localhost//'
 CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend'
-CELERY_ACCEPT_CONTENT = [ 'json' ]
-CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = [ 'json', 'pickle' ]
+CELERY_TASK_SERIALIZER = 'pickle'
 # enable 'pool_restart' command for reloading tasks
 CELERYD_POOL_RESTARTS = True
 
@@ -198,3 +199,10 @@ else:
         if k.startswith('__'):
             continue
         l[k] = getattr(local_settings, k)
+
+
+
+# TWILIO SMS ACCOUNT
+TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
+TWILIO_AUTH_TOKEN = 'd582bea599d8e1942ec04fe13d32cd2e'
+TWILIO_PHONE_NUMBER = '+12409794102'

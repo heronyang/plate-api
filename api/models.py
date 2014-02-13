@@ -24,12 +24,17 @@ from const import Configs
 from timezone_field import TimeZoneField
 import tasks
 
+from googl.short import GooglUrlShort
+
 import warnings
+
 warnings.filterwarnings('error', 'DateTimeField')
 
 logger = logging.getLogger(__name__)
 
 TIMEOUT_FOR_ADANDONED = (15 * 60)   # sec
+
+RESISTER_WELCOME_MESSAGE = u"PLATE帳號啓用，請點連結: "
 
 RESTAURANT_NAME_MAX = 33
 LOCATION_NAME_MAX = 200
@@ -63,9 +68,9 @@ GCM_REGISTRATION_ID_MAX = 600
 def remove_incomplete_order():
     tasks.remove_incomplete_order.apply_async()
 
-def gcm_send(gcm_registration_ids, title, message, ticker, collapse_key):
+def gcm_send(gcm_registration_ids, title, message, ticker, username, collapse_key):
     # Construct (key => scalar) payload. do not use nested structures.
-    data = {"title":title, "message":message, "ticker":ticker, }
+    data = {"title":title, "message":message, "ticker":ticker, "username":username}
 
     # Unicast or multicast message, read GCM manual about extra options.
     # It is probably a good idea to always use JSONMessage, even if you send
@@ -94,6 +99,10 @@ class Configuration(models.Model):
     def get0(cls):
         return cls.objects.get(pk=1)
 
+class LastRegistrationTime(models.Model):
+    user = models.ForeignKey(get_user_model())
+    last_time = models.DateTimeField()
+
 def db_init(unit_test_mode=True):
     (vendor_group, vendor_group_created) = Group.objects.get_or_create(name='vendor')
     if vendor_group_created:
@@ -115,9 +124,15 @@ class ClosedReason(models.Model):
         ClosedReason(msg='提早關門').save()
         ClosedReason(msg='特殊休假').save()
 
+    def __unicode__(self):
+        return self.msg
+
 class Location(models.Model):
     name = models.CharField(max_length=LOCATION_NAME_MAX)
     timezone = TimeZoneField()
+
+    def __unicode__(self):
+        return self.name
 
 class Restaurant(models.Model):
     name = models.CharField(max_length=RESTAURANT_NAME_MAX)
@@ -155,6 +170,7 @@ class Restaurant(models.Model):
     pic_tag.allow_tags = True
 
     # map the location to the real name
+    # not using
     def location_name(self):
         location_names = ["其他", "女二餐", "第二餐廳", "第一餐廳"]
         if len(location_names) > self.location:
@@ -203,7 +219,15 @@ class Restaurant(models.Model):
         return n
 
     def status_set(self, status):
+        if status == RESTAURANT_STATUS_FOLLOW_OPEN_RULES:
+            self.closed_reason = ClosedReason.objects.get(pk=1)
+
         self.status = status
+        self.save()
+
+    def closed_reason_set(self, closed_reason):
+        cr = ClosedReason.objects.get(pk=closed_reason)
+        self.closed_reason = cr
         self.save()
 
     @property
@@ -264,6 +288,10 @@ class Restaurant(models.Model):
 
     def __unicode__(self):
         return self.name
+
+class VendorLastRequestTime(models.Model):
+    restaurant = models.ForeignKey(Restaurant)
+    last_time = models.DateTimeField()
 
 class RestaurantOpenHours(models.Model):
     restaurant = models.ForeignKey(Restaurant)
@@ -347,9 +375,14 @@ class Profile(models.Model):
             message = '餐點已經順利領取，感謝使用Plate點餐系統'
             ticker = message
             collapse_key = 'order_pickuped'
+        elif caller is 'failure':
+            title = '未領餐'
+            message = '嗨，很可惜您今天沒有領餐，將計上一次失敗記錄，第二次失敗便不能再點餐'
+            ticker = message
+            collapse_key = 'order_failure'
         elif caller is 'prior_notification':
             title = '快好了'
-            message = '快輪到你領餐了，要起身去拿餐了哦！不然會涼掉'
+            message = '快輪到您領餐了！'
             ticker = message
             collapse_key = 'prior_notification'
         else:
@@ -366,6 +399,7 @@ class Profile(models.Model):
                      title=title,
                      message=message,
                      ticker=ticker,
+                     username=self.user.username,
                      collapse_key=collapse_key)
         else:
             raise TypeError()
@@ -382,17 +416,24 @@ class Profile(models.Model):
             password = h.encode(raw_password, h.salt())
 
         code = uuid.uuid4() #NOTE: this can be short if there's any other decode method
+
         ur = UserRegistration(code=code, user=self.user, password=password, ctime=timezone.now())
         ur.save()
 
         # avoid duplication
-        if not GCMRegistrationId.objects.filter(gcm_registration_id=gcm_registration_id):
+        gs = GCMRegistrationId.objects.filter(gcm_registration_id=gcm_registration_id)
+        is_exist = False
+        for g in gs:
+            if g.user == self.user:
+                is_exist = True
+        if not is_exist:
             gr = GCMRegistrationId(user=self.user, gcm_registration_id=gcm_registration_id)
             gr.save()
 
         # FIXME: generate URL
-        url = url_prefix + reverse('activate') + '?code=' + code.hex
-        message = '歡迎加入Plate點餐的行列，點選一下連結以啟動帳號！ ' + url
+        url = url_prefix + reverse('activate') + '?c=' + code.hex
+        surl = GooglUrlShort(url).short()
+        message = RESISTER_WELCOME_MESSAGE + surl
         return message
 
     def free_to_order(self):
@@ -402,8 +443,23 @@ class Profile(models.Model):
                 return False
         return True
 
-    def __send_verification_message(self, msg):
-        assert(0)
+    def send_verification_message(self, msg, phone_number):
+        international_phone_number = "+886" + phone_number[1:] # 09xx... => +8869xx...
+
+        tasks.sms_send.delay(international_phone_number, msg)
+        """
+        client = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+        try:
+            sms = client.sms.messages.create(body=msg,
+                                             to=international_phone_number,
+                                             from_=TWILIO_PHONE_NUMBER)
+        except TwilioRestException as Ex:
+            return (False, Ex.code)
+        else:
+            return (True, None)
+        # assert(0)
+        """
 
     def __unicode__(self):
         return self.phone_number
@@ -537,7 +593,23 @@ class Order(models.Model):
 
     @classmethod
     def daily_cleanup(cls):
-        logger.info('Order.daily_cleanup: FIXME: implement')
+        logger.info('Order.daily_cleanup: ' + str(timezone.now()))
+        os = Order.objects.all()
+        for o in os:
+            if o.status == ORDER_STATUS_FINISHED:
+                p = o.user.profile
+                p.failure += 1
+                p.save()
+
+                p.send_notification(caller='failure', method='gcm')
+                o.status = ORDER_STATUS_ABANDONED
+                o.save()
+
+            elif o.status == ORDER_STATUS_INIT_COOKING:
+                # no need for gcm here
+                o.status = ORDER_STATUS_DROPPED
+                o.save()
+
 
 class OrderItem(models.Model):
     # NOTE: expect changes for business requirements
@@ -569,5 +641,3 @@ class UserRegistration(models.Model):
         user = self.user
         user.is_active = True
         user.save()
-
-        # FIXME: DevicePassword

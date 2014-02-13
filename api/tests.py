@@ -53,7 +53,7 @@ class _User0(object):
 
         u = p0.user
         if is_active:
-            p0.add_user_registration(url_prefix='', raw_password=cls.password, gcm_registration_id=cls.gcm_registration_id)
+            p0.add_user_registration(url_prefix='http://localhost', raw_password=cls.password, gcm_registration_id=cls.gcm_registration_id)
             ur = UserRegistration.objects.get(user=p0.user)
             ur.activate()
 
@@ -82,7 +82,7 @@ class _Vendor0(object):
                 role=role, add_registration=False)
 
         v = p0.user
-        p0.add_user_registration(url_prefix='', raw_password=cls.password, gcm_registration_id=GCM_REGISTRATION_ID1)
+        p0.add_user_registration(url_prefix='http://localhost', raw_password=cls.password, gcm_registration_id=GCM_REGISTRATION_ID1)
         ur = UserRegistration.objects.get(user=p0.user)
         ur.activate()
 
@@ -112,19 +112,23 @@ class LoginTest(TestCase):
 
 class RegisterTest(TestCase):
     def test_bad_requests0(self):
+        api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': '', 'gcm_registration_id': ''})
         self.assertEqual(res.status_code, 400)
 
     def test_bad_requests1(self):
+        api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
             'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': ''})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format0(self):
+        api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': '091112312',  'password_type': 'raw', 'password': '1', 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 400)
 
     def test_wrong_format1(self):
+        api.models.db_init(unit_test_mode=True)
         res = self.client.post('/1/register', {'phone_number': '0911123123',  'password_type': 'raw', 'password': '', 'gcm_registration_id': _User0.gcm_registration_id})
         self.assertEqual(res.status_code, 400)
 
@@ -140,34 +144,52 @@ class RegisterTest(TestCase):
         assert(len(rs2) == 1)
         self.assertEqual(rs2[0].user.username, _User0.username)
 
+    def test_fail_multiple_request(self):
+        api.models.db_init(unit_test_mode=True)
+        res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
+            'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': _User0.gcm_registration_id})
+        self.assertEqual(res.status_code, 200)
+        rs = UserRegistration.objects.filter(user__profile__phone_number=_User0.phone_number)
+        assert(len(rs) == 1)
+
+        rs2 = GCMRegistrationId.objects.filter(gcm_registration_id=_User0.gcm_registration_id)
+        assert(len(rs2) == 1)
+        self.assertEqual(rs2[0].user.username, _User0.username)
+
+        res = self.client.post('/1/register', {'phone_number': _User0.phone_number,
+            'password_type': 'raw', 'password': _User0.password, 'gcm_registration_id': _User0.gcm_registration_id})
+        self.assertEqual(res.status_code, 470)
 
     def test_generate_user_registration_message(self):
         pass
 
 class ActivateTest(TestCase):
     def test_not_listed(self):
-        res = self.client.get('/1/activate', {'code':'xxx'})
+        res = self.client.get('/1/a', {'c':'xxx'})
         self.assertEqual(res.status_code, 401)
 
+    #FIXME: since we are using googl short URL, it's not able to get the code from the short URL
+"""
     def test_success(self):
         u0 = _User0.create()
-        m = u0.profile.add_user_registration(url_prefix='', raw_password=_User0.password, gcm_registration_id=_User0.gcm_registration_id)
-        start = m.find('/1/activate')
-        end = m.find('?code=', start)
+        m = u0.profile.add_user_registration(url_prefix='http://localhost', raw_password=_User0.password, gcm_registration_id=_User0.gcm_registration_id)
+        start = m.find('/1/a')
+        end = m.find('?c=', start)
         self.assertNotEqual(start, -1)
         self.assertNotEqual(end, -1)
         url = m[start:end]
-        (start, end) = ((end + len('?code=')), m.find(' ', start))
+        (start, end) = ((end + len('?c=')), m.find(' ', start))
         if end == -1:
             code = m[start:]
         else:
             code = m[start:end]
-        self.assertEqual(url, '/1/activate')
-        res = self.client.get(url, {'code': code})
+        self.assertEqual(url, '/1/a')
+        res = self.client.get(url, {'c': code})
         self.assertEqual(res.status_code, 200)
         # u0: reload
         u0 = User.objects.get(pk=u0.id)
         self.assertEqual(u0.is_active, True)
+        """
 
 class VendorListTest(TestCase):
     def test_vendor_list_success(self):
@@ -234,10 +256,10 @@ class OrderTest(TestCase):
         _login_through_api(self, _User0.username, _User0.password)
 
         m0 = _create_meal0()
-        jd = json.dumps( [{'meal_id': m0.id, 'amount': 6}] )
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 60}] )
         res = self.client.post('/1/order_post', {'order': jd})
 
-        self.assertEqual(res.status_code, 460)
+        self.assertEqual(res.status_code, 461)
 
     def test_success(self):
         u0 = _User0.create(is_active=True)
@@ -371,7 +393,7 @@ class OrderTest(TestCase):
 
         # At most one order should be outstanding
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 461)
+        self.assertEqual(res.status_code, 463)
 
     def test_order_restaurant_close(self):
         r0 = _create_restaurant0()
@@ -387,7 +409,7 @@ class OrderTest(TestCase):
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 462)
+        self.assertEqual(res.status_code, 464)
 
     def test_order_restaurant_manual_closed(self):
         r0 = _create_restaurant0()
@@ -403,7 +425,7 @@ class OrderTest(TestCase):
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 462)
+        self.assertEqual(res.status_code, 464)
 
     def test_order_restaurant_unlisted(self):
         r0 = _create_restaurant0()
@@ -419,8 +441,25 @@ class OrderTest(TestCase):
         jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
 
         res = self.client.post('/1/order_post', {'order': jd})
-        self.assertEqual(res.status_code, 462)
+        self.assertEqual(res.status_code, 464)
 
+    def test_order_restaurant_failure_over_max(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        u0 = _User0.create(is_active=True)
+
+        p = u0.profile
+        p.failure = 2
+        p.save()
+
+        _login_through_api(self, _User0.username, _User0.password)
+
+        m0 = _create_meal0(create_new_restaurant=False)
+        jd = json.dumps( [{'meal_id': m0.id, 'amount': 2}] )
+
+        res = self.client.post('/1/order_post', {'order': jd})
+        self.assertEqual(res.status_code, 462)
 
     # get
     def test_get_success_empty(self):
@@ -886,7 +925,7 @@ class VendorStatusTest(TestCase):
         # login and post
         res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
         self.assertEqual(res.status_code, 200)
-        res = self.client.get('/1/restaurant_status', {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
+        res = self.client.get('/1/restaurant_status', {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES, 'is_open':True})
         self.assertEqual(res.status_code, 200)
 
         # grab the object again to have the latest columns
@@ -908,7 +947,7 @@ class VendorStatusTest(TestCase):
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_OPEN})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_OPEN, 'is_open': True, 'closed_reason': ''})
 
         #
         r0.status = RESTAURANT_STATUS_MANUAL_CLOSE
@@ -918,7 +957,123 @@ class VendorStatusTest(TestCase):
         self.assertEqual(res.status_code, 200)
 
         d = json.loads(res.content)
-        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_CLOSE})
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_CLOSE, 'is_open':False, 'closed_reason': ''})
+
+    def test_set_restaurant_status_to_close(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/restaurant_status', {'status':RESTAURANT_STATUS_MANUAL_CLOSE})
+        self.assertEqual(res.status_code, 200)
+
+        res = self.client.get('/1/restaurant_status')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_CLOSE, 'is_open':False, 'closed_reason': ''})
+
+    def test_set_restaurant_status_to_open(self):
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/restaurant_status', {'status':RESTAURANT_STATUS_MANUAL_OPEN})
+        self.assertEqual(res.status_code, 200)
+
+        res = self.client.get('/1/restaurant_status')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_MANUAL_OPEN, 'is_open':True, 'closed_reason': ''})
+
+    def test_set_restaurant_status_to_follow_rule(self):
+        # point to other close reason
+        cr0 = ClosedReason(msg = 'C0')
+        cr0.save()
+        cr1 = ClosedReason(msg = 'C1')
+        cr1.save()
+
+        #
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+        r0.closed_reason = cr0
+        r0.save()
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/restaurant_status', {'status':RESTAURANT_STATUS_FOLLOW_OPEN_RULES})
+        self.assertEqual(res.status_code, 200)
+
+        res = self.client.get('/1/restaurant_status')
+        self.assertEqual(res.status_code, 200)
+
+        d = json.loads(res.content)
+        self.assertEqual(d, {'status': RESTAURANT_STATUS_FOLLOW_OPEN_RULES, 'is_open':True, 'closed_reason': 'C0'})
+
+        #
+        self.assertEqual(r0.closed_reason, ClosedReason.objects.get(pk=1))
+
+class ClosedReasonTest(TestCase):
+    def test_closed_reason_get(self):
+        # point to other close reason
+        cr0 = ClosedReason(msg = 'C0')
+        cr0.save()
+        cr1 = ClosedReason(msg = 'C1')
+        cr1.save()
+
+        #
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+        r0.closed_reason = cr0
+        r0.save()
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.get('/1/closed_reason')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, '{"closed_reasons": [{"msg": "C0", "id": 1}, {"msg": "C1", "id": 2}]}')
+
+    def test_closed_reason_post(self):
+        # point to other close reason
+        cr0 = ClosedReason(msg = 'C0')
+        cr0.save()
+        cr1 = ClosedReason(msg = 'C1')
+        cr1.save()
+
+        #
+        r0 = _create_restaurant0()
+        v0 = _Vendor0.create(restaurant=r0)
+        r0.closed_reason = cr0
+        r0.save()
+
+        # login and post
+        res = _login_through_api(self, _Vendor0.username, _Vendor0.password)
+        self.assertEqual(res.status_code, 200)
+
+        #
+        res = self.client.post('/1/closed_reason', {'closed_reason': cr1.id})
+        self.assertEqual(res.status_code, 200)
+        rr = Restaurant.objects.get(id=r0.id)
+        self.assertEqual(rr.closed_reason.id, cr1.id)
+
+        res = self.client.post('/1/closed_reason', {'closed_reason': (cr0.id+200)})
+        self.assertEqual(res.status_code, 422)
+
 
 class MenuTest(TestCase):
     def test_menu_get(self):
@@ -1016,6 +1171,8 @@ class OldAPITest(TestCase):
         self.assertEqual(d, {u'list': [{u'location': 1,
                                         u'name': u'R0',
                                         u'rest_id': 1,
+                                        u'is_open': True,
+                                        u'closed_reason': u'',
                                         u'description': u''}],
                              u'success': 1})
 

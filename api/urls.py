@@ -5,7 +5,7 @@ from api import views
 urlpatterns = patterns('',
 
     url(r'^1/register$', views.register, name='register'),
-    url(r'^1/activate$', views.activate, name='activate'),
+    url(r'^1/a$', views.activate, name='activate'), # activate, but short for SMS text
     url(r'^1/login$', views.login, name='login'),
 
     # app
@@ -25,6 +25,7 @@ urlpatterns = patterns('',
     url(r'^1/set_busy$', views.set_busy, name='set_busy'),
     url(r'^1/set_not_busy$', views.set_not_busy, name='set_not_busy'),
     url(r'^1/restaurant_status$', views.restaurant_status, name='restaurant_status'),
+    url(r'^1/closed_reason$', views.closed_reason, name='closed_reason'),
     url(r'^1/vendor_list$', views.vendor_list, name='vendor_list'),
 
     # not included in MVP

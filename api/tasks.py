@@ -3,8 +3,12 @@ from __future__ import absolute_import
 import logging
 import traceback
 
+from twilio.rest import TwilioRestClient
+from twilio import TwilioRestException
+
 from celery import shared_task
 from .models import *
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -61,3 +65,16 @@ def gcm_send(self, msg, retry_count=0):
 @shared_task
 def order_status_daily_cleanup():
     Order.daily_cleanup()
+
+@shared_task
+def sms_send(international_phone_number, msg):
+    client = TwilioRestClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
+    try:
+        sms = client.sms.messages.create(body=msg,
+                                         to=international_phone_number,
+                                         from_=settings.TWILIO_PHONE_NUMBER)
+    except TwilioRestException as Ex:
+        return (False, Ex.code)
+    else:
+        return (True, None)
