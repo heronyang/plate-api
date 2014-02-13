@@ -23,6 +23,7 @@ from gcmclient import *
 from const import Configs
 from timezone_field import TimeZoneField
 import tasks
+import shortuuid
 
 from googl.short import GooglUrlShort
 
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 TIMEOUT_FOR_ADANDONED = (15 * 60)   # sec
 
-RESISTER_WELCOME_MESSAGE = u"PLATE帳號啓用，請點連結: "
+RESISTER_WELCOME_MESSAGE = u"啟用PLATE 請點: "
 
 RESTAURANT_NAME_MAX = 33
 LOCATION_NAME_MAX = 200
@@ -431,9 +432,9 @@ class Profile(models.Model):
             gr.save()
 
         # FIXME: generate URL
-        url = url_prefix + reverse('activate') + '?c=' + code.hex
-        surl = GooglUrlShort(url).short()
-        message = RESISTER_WELCOME_MESSAGE + surl
+        url = url_prefix + reverse('activate', args=(shortuuid.encode(code),))
+        #surl = GooglUrlShort(url).short()
+        message = RESISTER_WELCOME_MESSAGE + url
         return message
 
     def free_to_order(self):

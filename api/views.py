@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.template.response import TemplateResponse
 from const import Configs
 import re
+import shortuuid
 
 from jsonate import jsonate
 
@@ -119,6 +120,9 @@ def register(request):
     # send SMS here
     if not c.unit_test_mode:
         m = profile.add_user_registration(url_prefix, password=password, gcm_registration_id=gcm_registration_id)
+        assert(profile is not None)
+        assert(m is not None)
+        assert(phone_number is not None)
         profile.send_verification_message(m, phone_number)
     else:
         m = profile.add_user_registration('http://localhost', password=password, gcm_registration_id=gcm_registration_id)
@@ -134,13 +138,16 @@ def register(request):
 
 @csrf_exempt
 @require_GET
-def activate(request):
+def activate(request, suuid):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
 
+    logger.error('suuid: %s' % (suuid,))
+
     #FIXME: check if the record is clicked
-    code = request.GET['c']
+    #code = request.GET['c']
+    code = shortuuid.decode(suuid)
     try:
-        ur = UserRegistration.objects.get(code=code)
+        ur = UserRegistration.objects.get(code=code.hex)
     except UserRegistration.DoesNotExist:
         res.status_code = 401
         return res

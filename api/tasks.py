@@ -51,15 +51,18 @@ def gcm_send(self, msg, retry_count=0):
     except GCMAuthenticationError:
         # stop and fix your settings
         logger.error("GCM: Your Google API key is rejected")
+        raise
     except ValueError, e:
         # probably your extra options, such as time_to_live,
         # are invalid. Read error message for more info.
         logger.error("GCM: Invalid message/option or invalid GCM response\t" + e.args[0])
+        raise
     except Exception:
         # your network is down or maybe proxy settings
         # are broken. when problem is resolved, you can
         # retry the whole message.
         logger.error('GCM: Exception: ' + traceback.format_exc())
+        raise
 
 @shared_task
 def order_status_daily_cleanup():
@@ -75,3 +78,5 @@ def sms_send(international_phone_number, msg):
                                          from_=settings.TWILIO_PHONE_NUMBER)
     except TwilioRestException as e:
         logger.error('SMS: TwilioRestException, code: ' + str(e.code))
+        # error code reference: https://www.twilio.com/docs/errors/reference
+        raise

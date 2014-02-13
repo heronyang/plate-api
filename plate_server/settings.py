@@ -10,8 +10,9 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    ('PLATE Developers', 'dev-plate-tw@googlegroups.com'),
-    ('Heron Yang', 'heron.yang.tw@gmail.com'),
+    ('PLATE System', 'system.plate.tw@gmail.com'),
+    #('PLATE Developers', 'dev-plate-tw@googlegroups.com'),
+    #('Heron Yang', 'heron.yang.tw@gmail.com'),
 )
 
 MANAGERS = ADMINS
@@ -145,12 +146,26 @@ INSTALLED_APPS = (
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+            },
+        },
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
         }
     },
     'handlers': {
+        'console':{
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'stream': sys.stderr,
+            },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
@@ -158,8 +173,13 @@ LOGGING = {
         }
     },
     'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'INFO',
+        },
         'django.request': {
-            'handlers': ['mail_admins'],
+            'handlers': ['mail_admins', 'console'],
             'level': 'ERROR',
             'propagate': True,
         },
@@ -198,12 +218,15 @@ CELERYBEAT_SCHEDULE = {
 GCM_APIKEY = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
 
 # TWILIO SMS ACCOUNT
-TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
-TWILIO_AUTH_TOKEN = 'd582bea599d8e1942ec04fe13d32cd2e'
-TWILIO_PHONE_NUMBER = '+12409794102'
-
-TWILIO_TEST_ACCOUNT_SID = 'ACd79aec23fcc3e3b7f2221b0a120f4dda'
-TWILIO_TEST_AUTH_TOKEN = '80b6d37ba3621fd18bea6e0ba7310779'
+TEST_MODE = False
+if TEST_MODE:
+    TWILIO_ACCOUNT_SID = 'ACd79aec23fcc3e3b7f2221b0a120f4dda'
+    TWILIO_AUTH_TOKEN = '80b6d37ba3621fd18bea6e0ba7310779'
+    TWILIO_PHONE_NUMBER = '+15005550006'
+else:
+    TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
+    TWILIO_AUTH_TOKEN = 'd582bea599d8e1942ec04fe13d32cd2e'
+    TWILIO_PHONE_NUMBER = '+12409794102'
 
 # local_settings override
 # NOTE: leave this at the end of settings.py
@@ -218,4 +241,3 @@ else:
         if k.startswith('__'):
             continue
         l[k] = getattr(local_settings, k)
-
