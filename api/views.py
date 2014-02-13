@@ -114,13 +114,14 @@ def register(request):
     if wsgi_mount_point:
          url_prefix += wsgi_mount_point
 
-    m = profile.add_user_registration(url_prefix, password=password, gcm_registration_id=gcm_registration_id)
     c = Configuration.get0()
 
     # send SMS here
     if not c.unit_test_mode:
+        m = profile.add_user_registration(url_prefix, password=password, gcm_registration_id=gcm_registration_id)
         (sms_is_send, sms_error_code) = profile.send_verification_message(m, phone_number)
     else:
+        m = profile.add_user_registration('http://localhost', password=password, gcm_registration_id=gcm_registration_id)
         if not UNIT_TEST_PHONE_NUMBER:
             (sms_is_send, sms_error_code) = (True, None)
             pass
