@@ -163,6 +163,11 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        'api.tasks': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
     }
 }
 
@@ -189,6 +194,20 @@ CELERYBEAT_SCHEDULE = {
     },
 }
 
+# Google Cloud Messaging, GCM
+GCM_APIKEY = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
+
+# TWILIO SMS ACCOUNT
+TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
+TWILIO_AUTH_TOKEN = 'd582bea599d8e1942ec04fe13d32cd2e'
+TWILIO_PHONE_NUMBER = '+12409794102'
+
+TWILIO_TEST_ACCOUNT_SID = 'ACd79aec23fcc3e3b7f2221b0a120f4dda'
+TWILIO_TEST_AUTH_TOKEN = '80b6d37ba3621fd18bea6e0ba7310779'
+
+# local_settings override
+# NOTE: leave this at the end of settings.py
+
 try:
     from . import local_settings
 except ImportError:
@@ -200,12 +219,3 @@ else:
             continue
         l[k] = getattr(local_settings, k)
 
-
-
-# TWILIO SMS ACCOUNT
-TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
-TWILIO_AUTH_TOKEN = 'd582bea599d8e1942ec04fe13d32cd2e'
-TWILIO_PHONE_NUMBER = '+12409794102'
-
-TWILIO_TEST_ACCOUNT_SID = 'ACd79aec23fcc3e3b7f2221b0a120f4dda'
-TWILIO_TEST_AUTH_TOKEN = '80b6d37ba3621fd18bea6e0ba7310779'
