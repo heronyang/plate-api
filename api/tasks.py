@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 def gcm_send(self, msg, retry_count=0):
     # Pass 'proxies' keyword argument, as described in 'requests' library if you
     # use proxies. Check other options too.
-    apiKey = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
-    gcm = GCM(apiKey)
+    gcm = GCM(settings.GCM_APIKEY)
     try:
         # attempt send
         res = gcm.send(msg)
@@ -74,8 +73,5 @@ def sms_send(international_phone_number, msg):
         sms = client.sms.messages.create(body=msg,
                                          to=international_phone_number,
                                          from_=settings.TWILIO_PHONE_NUMBER)
-    except TwilioRestException as Ex:
-        logger.error('SMS: Exception, code = ' + str(Ex.code))
-        return (False, Ex.code)
-    else:
-        return (True, None)
+    except TwilioRestException as e:
+        logger.error('SMS: TwilioRestException, code: ' + str(e.code))

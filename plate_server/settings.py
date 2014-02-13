@@ -163,6 +163,11 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        'api.tasks': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
     }
 }
 
@@ -189,18 +194,8 @@ CELERYBEAT_SCHEDULE = {
     },
 }
 
-try:
-    from . import local_settings
-except ImportError:
-    pass
-else:
-    l = locals()
-    for k in dir(local_settings):
-        if k.startswith('__'):
-            continue
-        l[k] = getattr(local_settings, k)
-
-
+# Google Cloud Messaging, GCM
+GCM_APIKEY = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
 
 # TWILIO SMS ACCOUNT
 TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
@@ -213,3 +208,18 @@ TWILIO_TEST_PHONE_NUMBER = '+15005550006'
 
 #TWILIO_ACCOUNT_SID = TWILIO_TEST_ACCOUNT_SID
 #TWILIO_AUTH_TOKEN = TWILIO_TEST_AUTH_TOKEN
+
+
+# local_settings override
+# NOTE: leave this at the end of settings.py
+
+try:
+    from . import local_settings
+except ImportError:
+    pass
+else:
+    l = locals()
+    for k in dir(local_settings):
+        if k.startswith('__'):
+            continue
+        l[k] = getattr(local_settings, k)
