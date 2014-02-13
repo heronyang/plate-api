@@ -75,6 +75,7 @@ def sms_send(international_phone_number, msg):
                                          to=international_phone_number,
                                          from_=settings.TWILIO_PHONE_NUMBER)
     except TwilioRestException as Ex:
+        logger.error('SMS: Exception, code = ' + str(Ex.code))
         return (False, Ex.code)
     else:
         return (True, None)

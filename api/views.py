@@ -119,21 +119,15 @@ def register(request):
     # send SMS here
     if not c.unit_test_mode:
         m = profile.add_user_registration(url_prefix, password=password, gcm_registration_id=gcm_registration_id)
-        (sms_is_send, sms_error_code) = profile.send_verification_message(m, phone_number)
+        profile.send_verification_message(m, phone_number)
     else:
         m = profile.add_user_registration('http://localhost', password=password, gcm_registration_id=gcm_registration_id)
         if not UNIT_TEST_PHONE_NUMBER:
-            (sms_is_send, sms_error_code) = (True, None)
             pass
         elif UNIT_TEST_PHONE_NUMBER == "register":
-            (sms_is_send, sms_error_code) = profile.send_verification_message(m, phone_number)
+            profile.send_verification_message(m, phone_number)
         else:
-            (sms_is_send, sms_error_code) = profile.send_verification_message(m, UNIT_TEST_PHONE_NUMBER)
-
-    if not sms_is_send:
-        # FIXME: error handler here, just drop now
-        pass
-    #
+            profile.send_verification_message(m, UNIT_TEST_PHONE_NUMBER)
 
     res.status_code = 200
     return res
