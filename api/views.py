@@ -141,11 +141,13 @@ def register(request):
 def activate(request, suuid):
     res = HttpResponse(content_type=CONTENT_TYPE_TEXT)
 
+    logger.error('suuid: %s' % (suuid,))
+
     #FIXME: check if the record is clicked
     #code = request.GET['c']
     code = shortuuid.decode(suuid)
     try:
-        ur = UserRegistration.objects.get(code=code)
+        ur = UserRegistration.objects.get(code=code.hex)
     except UserRegistration.DoesNotExist:
         res.status_code = 401
         return res
