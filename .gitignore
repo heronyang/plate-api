@@ -12,3 +12,4 @@ plate.sqlite3
 tags
 celerybeat-schedule
 celerybeat.pid
+multimech-stress-test/results/*
