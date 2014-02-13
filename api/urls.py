@@ -5,7 +5,8 @@ from api import views
 urlpatterns = patterns('',
 
     url(r'^1/register$', views.register, name='register'),
-    url(r'^1/a$', views.activate, name='activate'), # activate, but short for SMS text
+    #url(r'^1/a$', views.activate, name='activate'), # activate, but short for SMS text
+    url(r'^A/(?P<suuid>.*)/$', views.activate, name='activate'), # activate, but short for SMS text
     url(r'^1/login$', views.login, name='login'),
 
     # app
