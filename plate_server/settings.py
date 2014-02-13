@@ -6,7 +6,7 @@ import os
 
 PROJECT_DIR = os.path.dirname(__file__)
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -201,3 +201,10 @@ else:
         if k.startswith('__'):
             continue
         l[k] = getattr(local_settings, k)
+
+
+
+# TWILIO SMS ACCOUNT
+TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
+TWILIO_AUTH_TOKEN = 'd582bea599d8e1942ec04fe13d32cd2e'
+TWILIO_PHONE_NUMBER = '+12409794102'

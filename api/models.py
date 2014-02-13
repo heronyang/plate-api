@@ -23,10 +23,6 @@ from gcmclient import *
 from const import Configs
 from timezone_field import TimeZoneField
 import tasks
-import keys
-
-from twilio.rest import TwilioRestClient
-from twilio import TwilioRestException
 
 from googl.short import GooglUrlShort
 
@@ -37,11 +33,6 @@ warnings.filterwarnings('error', 'DateTimeField')
 logger = logging.getLogger(__name__)
 
 TIMEOUT_FOR_ADANDONED = (15 * 60)   # sec
-
-# TWILIO SMS ACCOUNT
-TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
-TWILIO_AUTH_TOKEN = keys.TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER = '+12409794102'
 
 RESISTER_WELCOME_MESSAGE = u"PLATE帳號啓用，請點連結: "
 
@@ -454,6 +445,9 @@ class Profile(models.Model):
 
     def send_verification_message(self, msg, phone_number):
         international_phone_number = "+886" + phone_number[1:] # 09xx... => +8869xx...
+
+        tasks.sms_send.delay(international_phone_number, msg)
+        """
         client = TwilioRestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
         try:
@@ -465,6 +459,7 @@ class Profile(models.Model):
         else:
             return (True, None)
         # assert(0)
+        """
 
     def __unicode__(self):
         return self.phone_number
