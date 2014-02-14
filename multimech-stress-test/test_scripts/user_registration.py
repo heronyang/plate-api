@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# URL = 'https://api.plate.tw'
-URL = 'http://127.0.0.1:8000'
+URL = 'https://api.plate.tw'
+#URL = 'http://127.0.0.1:8000'
 
 import random
 import urllib
