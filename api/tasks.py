@@ -28,15 +28,18 @@ def gcm_send(self, msg, retry_count=0):
         # update your registration ID's
         for reg_id, new_reg_id in res.canonical.items():
             logger.info("GCM: Replacing %s with %s in database" % (reg_id, new_reg_id))
-            g = GCMRegistrationId.objects.get(gcm_registration_id=reg_id)
-            g.gcm_registration_id=new_reg_id
-            g.save()
+            gs = GCMRegistrationId.objects.filter(gcm_registration_id=reg_id)
+            for g in gs:
+                g.gcm_registration_id=new_reg_id
+                g.save()
 
         # probably app was uninstalled
         for reg_id in res.not_registered:
             logger.info("GCM: Removing %s from database" % reg_id)
-            g = GCMRegistrationId.objects.get(gcm_registration_id=reg_id)
-            g.delete()
+            gs = GCMRegistrationId.objects.filter(gcm_registration_id=reg_id)
+            for g in gs:
+                g.delete()
+                g.save()
 
         # unrecoverably failed, these ID's will not be retried
         # consult GCM manual for all error codes
