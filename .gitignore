@@ -14,3 +14,4 @@ celerybeat-schedule
 celerybeat.pid
 multimech-stress-test/results/*
 keys.py
+collection3/
