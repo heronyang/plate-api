@@ -209,7 +209,7 @@ from datetime import timedelta
 CELERYBEAT_SCHEDULE = {
     'order-status-daily-cleanup': {
         'task': 'api.tasks.order_status_daily_cleanup',
-        'schedule': crontab(hour=16), # 24:00 GMT+8 == 16:00 GMT
+        'schedule': crontab(minute=0, hour=0), # 24:00 GMT+8 == 16:00 GMT
         'args': ()
     },
 }
@@ -218,7 +218,7 @@ CELERYBEAT_SCHEDULE = {
 GCM_APIKEY = "AIzaSyDkk5h2bCH54oCHgM2YCpE9EUx235ppFho"
 
 # TWILIO SMS ACCOUNT
-TEST_MODE = True
+TEST_MODE = False
 if TEST_MODE:
     TWILIO_ACCOUNT_SID = 'ACd79aec23fcc3e3b7f2221b0a120f4dda'
     TWILIO_AUTH_TOKEN = '80b6d37ba3621fd18bea6e0ba7310779'
