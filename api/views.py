@@ -163,7 +163,7 @@ def activate(request, suuid):
             res.content = e.args[0]
             return res
 
-        content = """<!DOCTYPE html> <html> <head> <title>Congratulations!</title> <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script> </head> <body> <h3>註冊成功</h3> <p>Welcome to PLATE!</p> <p>leave this page in <span id="remain_seconds">5</span> seconds</p> <script> var count = 9; var countdown = setInterval(function(){ $("#remain_seconds").html(count + ""); if (count == 0) { clearInterval(countdown); window.open('http://plate.tw', "_self"); } count--; }, 1000); </script> </body> </html>"""
+        content = """<!DOCTYPE html> <html> <head> <title>Congratulations!</title> <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script> </head> <body> <h3>註冊成功</h3> <p>Welcome to PLATE!</p> <p>leave this page in <span id="remain_seconds">10</span> seconds</p> <script> var count = 9; var countdown = setInterval(function(){ $("#remain_seconds").html(count + ""); if (count == 0) { clearInterval(countdown); window.open('http://plate.tw', "_self"); } count--; }, 1000); </script> </body> </html>"""
         res = HttpResponse(content)
         res.status_code = 200
         return res

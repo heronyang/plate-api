@@ -373,7 +373,7 @@ class Profile(models.Model):
             collapse_key = 'order_canceled'
         elif caller is 'pickup':
             title = '已領餐'
-            message = '餐點已經順利領取，感謝使用Plate點餐系統'
+            message = '餐點已經順利領取，感謝使用PLATE點餐系統'
             ticker = message
             collapse_key = 'order_pickuped'
         elif caller is 'failure':
@@ -402,6 +402,12 @@ class Profile(models.Model):
                      ticker=ticker,
                      username=self.user.username,
                      collapse_key=collapse_key)
+
+        elif method is 'sms':
+            international_phone_number = "+886" + self.phone_number[1:] # 09xx... => +8869xx...
+            sms_content = "PLATE: " + message
+            tasks.sms_send.delay(international_phone_number, sms_content)
+
         else:
             raise TypeError()
 
@@ -550,6 +556,7 @@ class Order(models.Model):
         #
         p = self.user.profile
         p.send_notification(caller='finish', method='gcm')
+        p.send_notification(caller='finish', method='sms')
 
         # turn the order to abandon in (TIMEOUT_FOR_ADANDONED) seconds
         # if the user does not 'pickup' during this period
