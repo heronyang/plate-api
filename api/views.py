@@ -19,6 +19,7 @@ from django.template.response import TemplateResponse
 from const import Configs
 import re
 import shortuuid
+import tasks
 
 from jsonate import jsonate
 
@@ -278,6 +279,15 @@ def order_post(request):
         res.content = jsonate({'error_msg':error_msg})
         res.status_code = 464
         return res
+
+    # if the rest is offline, email the admins
+    now = timezone.now()
+    lr = VendorLastRequestTime.objects.get(restaurant=rest)
+    t = lr.last_time
+    if( (now-t) > datetime.timedelta(seconds=Configs.ACCEPTABLE_OFFLINE_TIME) ):
+        title = rest.name + " is offline"
+        message = "now: " + str(now) + "\n" + "last request time: " + str(t)
+        tasks.email_admin.delay(title, message)
 
     # FIXME: does it make more sense to implement 'order_create' at Restuarant?
     i = order_data[0]

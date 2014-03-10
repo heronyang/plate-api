@@ -11,8 +11,9 @@ TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     ('PLATE System', 'system.plate.tw@gmail.com'),
+    ('PLATE Service', 'plate-service@googlegroups.com'),
+    ('Heron Yang', 'heron.yang.tw@gmail.com'),
     #('PLATE Developers', 'dev-plate-tw@googlegroups.com'),
-    #('Heron Yang', 'heron.yang.tw@gmail.com'),
 )
 
 MANAGERS = ADMINS
@@ -227,6 +228,13 @@ else:
     TWILIO_ACCOUNT_SID = 'AC8e06cf9fc90ab16f58e235be0e0217ac'
     TWILIO_AUTH_TOKEN = 'd582bea599d8e1942ec04fe13d32cd2e'
     TWILIO_PHONE_NUMBER = '+12409794102'
+
+# Email Notification for Admins Setup
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'system.plate.tw@gmail.com'
+EMAIL_HOST_PASSWORD = 'plateplate'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 # local_settings override
 # NOTE: leave this at the end of settings.py

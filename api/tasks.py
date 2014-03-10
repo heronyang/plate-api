@@ -6,6 +6,8 @@ import traceback
 from twilio.rest import TwilioRestClient
 from twilio import TwilioRestException
 
+from django.core.mail import EmailMessage
+
 from celery import shared_task
 from .models import *
 from django.conf import settings
@@ -83,3 +85,11 @@ def sms_send(international_phone_number, msg):
         logger.error('SMS: TwilioRestException, code: ' + str(e.code))
         # error code reference: https://www.twilio.com/docs/errors/reference
         raise
+
+@shared_task
+def email_admin(title, msg):
+    email_list = []
+    for e in settings.ADMINS:
+        email_list.append(e[1])
+    email = EmailMessage(title, msg, to=email_list)
+    email.send()

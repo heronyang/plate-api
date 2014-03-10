@@ -556,7 +556,8 @@ class Order(models.Model):
         #
         p = self.user.profile
         p.send_notification(caller='finish', method='gcm')
-        p.send_notification(caller='finish', method='sms')
+        if Configs.SEND_SMS_WHEN_PICKUP:
+            p.send_notification(caller='finish', method='sms')
 
         # turn the order to abandon in (TIMEOUT_FOR_ADANDONED) seconds
         # if the user does not 'pickup' during this period

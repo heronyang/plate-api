@@ -10,3 +10,7 @@ class Configs(object):
     # Normally only allow one oustanding order per customer
     # Turn on only for testing
     ALLOW_MULTIPLE_OUTSTANDING_ORDERS = False
+
+    ACCEPTABLE_OFFLINE_TIME = 60 # seconds
+
+    SEND_SMS_WHEN_PICKUP = False
