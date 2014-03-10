@@ -281,13 +281,17 @@ def order_post(request):
         return res
 
     # if the rest is offline, email the admins
-    now = timezone.now()
-    lr = VendorLastRequestTime.objects.get(restaurant=rest)
-    t = lr.last_time
-    if( (now-t) > datetime.timedelta(seconds=Configs.ACCEPTABLE_OFFLINE_TIME) ):
-        title = rest.name + " is offline"
-        message = "now: " + str(now) + "\n" + "last request time: " + str(t)
-        tasks.email_admin.delay(title, message)
+    try:
+        lr = VendorLastRequestTime.objects.get(restaurant=rest)
+        t = lr.last_time
+        now = timezone.now()
+        if( (now-t) > datetime.timedelta(seconds=Configs.ACCEPTABLE_OFFLINE_TIME) ):
+            title = rest.name + " is offline"
+            message = "now: " + str(now) + "\n" + "last request time: " + str(t)
+            tasks.email_admin.delay(title, message)
+    except VendorLastRequestTime.DoesNotExist:
+        pass
+
 
     # FIXME: does it make more sense to implement 'order_create' at Restuarant?
     i = order_data[0]
@@ -509,7 +513,12 @@ def order_vendor(request):
         res.status_code = 400
         return res
 
-    orders = Order.objects.filter(restaurant = restaurant)
+    orders_all = Order.objects.filter(restaurant = restaurant)
+    orders = []
+    for o in orders_all:
+        if o.status == ORDER_STATUS_INIT_COOKING or o.status == ORDER_STATUS_FINISHED:
+            orders.append(o)
+
     r = []
     for i in orders:
         row = {}

@@ -164,11 +164,11 @@ class RegisterTest(TestCase):
         pass
 
 class ActivateTest(TestCase):
+    #FIXME: since we are using googl short URL, it's not able to get the code from the short URL
     def test_not_listed(self):
-        res = self.client.get('/1/a', {'c':'xxx'})
+        res = self.client.get('/A/' + 'xxx/')
         self.assertEqual(res.status_code, 401)
 
-    #FIXME: since we are using googl short URL, it's not able to get the code from the short URL
 """
     def test_success(self):
         u0 = _User0.create()
