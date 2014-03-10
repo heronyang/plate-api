@@ -516,6 +516,9 @@ class Meal(models.Model):
         oi = OrderItem(meal=self, amount=amount, order=order, note=note)
         oi.save()
 
+        ct = OrderStatusChangeTime(order=order)
+        ct.save()
+
         # generate a number slip
         return (order, number_slip)
 
@@ -567,6 +570,10 @@ class Order(models.Model):
         # update restaurant current_number_slip
         self.restaurant.update_current_number_slip(self.pos_slip_number)
 
+        (ct, ct_created) = OrderStatusChangeTime.objects.get_or_create(order=self)
+        ct.finish_time = timezone.now()
+        ct.save()
+
         return True
 
     def pickup(self):
@@ -575,12 +582,22 @@ class Order(models.Model):
             self.save()
             p = self.user.profile
             p.send_notification(caller='pickup', method='gcm')
+
+            (ct, ct_created) = OrderStatusChangeTime.objects.get_or_create(order=self)
+            ct.pickup_time = timezone.now()
+            ct.save()
+
             return True
         if self.status == ORDER_STATUS_ABANDONED:
             self.status = ORDER_STATUS_RESCUED
             self.save()
             p = self.user.profile
             p.send_notification(caller='pickup', method='gcm')
+
+            (ct, ct_created) = OrderStatusChangeTime.objects.get_or_create(order=self)
+            ct.pickup_time = timezone.now()
+            ct.save()
+
             return True
 
         #
@@ -626,6 +643,12 @@ class OrderItem(models.Model):
     amount = models.IntegerField()
     order = models.ForeignKey(Order)
     note = models.TextField(blank=True) # extra info for the order item
+
+class OrderStatusChangeTime(models.Model):
+    order = models.ForeignKey(Order)
+    ctime = models.DateTimeField(auto_now_add=True)
+    finish_time = models.DateTimeField(null = True)
+    pickup_time = models.DateTimeField(null = True)
 
 class MealRecommendation(models.Model):
     meal = models.ForeignKey(Meal)

@@ -95,6 +95,13 @@ class RestaurantHolidayAdmin(admin.ModelAdmin):
 class RestaurantOpenHoursAdmin(admin.ModelAdmin):
     list_display = ('restaurant', 'start', 'end')
 
+class OrderStatusChangeTimeAdmin(admin.ModelAdmin):
+    list_display = ('username', 'order_rest', 'ctime', 'finish_time', 'pickup_time')
+    def username(self, ct):
+        return ct.order.user.username
+    def order_rest(self, ct):
+        return ct.order.restaurant.name
+
 admin.site.unregister(get_user_model())
 admin.site.register(get_user_model(), MyUserAdmin)
 admin.site.register(Restaurant, RestaurantAdmin)
@@ -110,3 +117,4 @@ admin.site.register(VendorLastRequestTime, VendorLastRequestTimeAdmin)
 admin.site.register(LastRegistrationTime, LastRegistrationTimeAdmin)
 admin.site.register(RestaurantHoliday, RestaurantHolidayAdmin)
 admin.site.register(RestaurantOpenHours, RestaurantOpenHoursAdmin)
+admin.site.register(OrderStatusChangeTime, OrderStatusChangeTimeAdmin)
