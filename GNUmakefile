@@ -11,6 +11,8 @@ dbinit:
 		./manage.py migrate $$i; \
 	done
 	#./manage.py loaddata plate-test.json
+	./manage.py loaddata plate-auth.json
+	./manage.py loaddata plate-api.json
 
 .PHONY: pull
 pull:
