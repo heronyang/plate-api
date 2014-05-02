@@ -24,6 +24,7 @@ from const import Configs
 from timezone_field import TimeZoneField
 import tasks
 import shortuuid
+import threading
 
 from googl.short import GooglUrlShort
 
@@ -65,6 +66,7 @@ GCM_REGISTRATION_ID_MAX = 600
  ORDER_STATUS_DROPPED       # order-complete
  ) = range(7)
 
+number_slip_lock = threading.Lock()
 
 def remove_incomplete_order():
     tasks.remove_incomplete_order.apply_async()
@@ -156,9 +158,11 @@ class Restaurant(models.Model):
     #
     description = models.TextField(blank=True) # extra info for the recommendation
 
-    def new_number_slip(self):
+    def new_number_slip(self):  # lock apply here
+        number_slip_lock.acquire()
         self.number_slip += 1
         self.save()
+        number_slip_lock.release()
         return self.number_slip
 
     # get the picture of the meal in HTML
@@ -410,6 +414,32 @@ class Profile(models.Model):
 
         else:
             raise TypeError()
+
+    def send_custom_notification(self, title, message, method):
+        collapse_key = 'custom_notification'
+        ticker = message
+
+        gcm_registration_ids = []
+        gs = GCMRegistrationId.objects.filter(user=self.user)
+        for g in gs:
+            gcm_registration_ids.append(g.gcm_registration_id)
+
+        if method is 'gcm':
+            gcm_send(gcm_registration_ids=gcm_registration_ids,
+                     title=title,
+                     message=message,
+                     ticker=ticker,
+                     username=self.user.username,
+                     collapse_key=collapse_key)
+
+        elif method is 'sms':
+            international_phone_number = "+886" + self.phone_number[1:] # 09xx... => +8869xx...
+            sms_content = "PLATE: " + message
+            tasks.sms_send.delay(international_phone_number, sms_content)
+
+        else:
+            raise TypeError()
+
 
     def add_user_registration(self, url_prefix, gcm_registration_id, password=None, raw_password=None):
         if (password is None) and (raw_password is None):

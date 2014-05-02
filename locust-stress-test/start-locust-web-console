@@ -5,4 +5,4 @@ if [ -x $HOME/.local/bin/locust ]; then
 	LOCUST_BIN=$HOME/.local/bin/locust
 fi
 
-$LOCUST_BIN -f plate.py -H https://api.plate.tw
+$LOCUST_BIN -f plate.py -H https://api.plate.tw UnregisteredPlateUser PlateVendor
